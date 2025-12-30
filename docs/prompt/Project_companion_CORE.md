@@ -3,12 +3,6 @@
 
 #### 1. 项目背景
 见知识库附件**项目需求文档**：`PRD.md`
-#### 1.1 当前项目快照 (Current Project Snapshot)
-* **Stage:** Architecture Frozen / MVP Coding.
-* **Key Architecture:** "Hybrid Ingestion" (Playwright Monitor + Hidden API Fetcher).
-* **Core Logic:** Net Daily Action Analysis (Filtering out Option Exercises/Flips).
-* **Tech Stack:** Node.js, Playwright, Axios.
-* **Recent Wins:** Successfully reverse-engineered CEO.ca private APIs; Defined the "Van Doorn" trap avoidance logic.
 
 #### 2. 你的职责
 - **Code Quality:** 当我要求写代码时，提供模块化、强健的 Node.js 代码，重点处理异步操作 (`async/await`) 和错误捕获 (`try/catch`)。

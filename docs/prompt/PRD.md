@@ -7,10 +7,11 @@
 
 **2. 核心功能 (MVP Status)**
   * **全市场扫描 (The Scout):** * 实时监控 `https://ceo.ca/@sedi` 信息流。
-      * 自动去重，只处理 60 秒内新出现的 Ticker。
+      * 自动去重 (Watermark Strategy)，自动维护登录会话 (Session Guard)。
   * **数据清洗与增强 (The Processor):**
       * **ID 映射:** 自动将 Ticker 转换为系统内部 ID。
-      * **结构化获取:** 获取该 ID 最近 20 条交易记录 (JSON)。
+      * **隐身获取:** 使用模拟浏览器指纹技术获取 API 数据，绕过防火墙。
+      * **持久化:** 本地 JSONL 数据库存储历史记录。
   * **智能信号评分 (The Analyzer):**
       * **过滤:** 剔除期权行权 (Option Exercise)、非公开市场交易 (Private Placement)。
       * **验证:** 计算 **"Skin in the Game" (真金白银投入)**。
@@ -19,17 +20,19 @@
       * 控制台输出高亮的高价值信号 (Score > Threshold)。
 
 **3. 技术架构 (Architecture)**
-  * **Frontend Monitor:** Playwright (Headless Chrome) - 用于突破付费墙获取实时流。
-  * **Backend Client:** Axios (Node.js) - 用于高效获取结构化数据。
-  * **Data Source:** CEO.ca (Reverse Engineered APIs).
-  * **Execution:** Local Node.js Process.
+  * **Frontend Monitor:** Playwright (Headed) - 负责 UI 触发与 Cookie 桥接。
+  * **Backend Client:** **Playwright (Stealth Context)** - *取代 Axios*。使用 Network Context 模拟真实用户行为，解决 403 Forbidden 问题。
+  * **Data Source:** CEO.ca (Tier-2 Authenticated API).
+  * **Storage:** Local JSONL File System.
 
 **4. 数据流 (Data Pipeline)**
-1.  **Ingest:** Playwright sees "$SUNN just filed..." -> Extract `SUNN`.
-2.  **Map:** API Call `search_companies?query=SUNN` -> Get ID `55841`.
-3.  **Fetch:** API Call `transactions?issuer_number=55841`.
-4.  **Compute:** `analyzer.evaluate(transactions)` -> Returns Score.
-5.  **Action:** If Score > 50 -> Alert.
+1.  **Monitor:** Detects "$SUNN just filed..." -> Extract `SUNN`.
+2.  **Auth Bridge:** Reads `cookies.json` (Maintained by Monitor).
+3.  **Map:** Stealth Nav to `search_companies?query=SUNN` -> Get ID `55841`.
+4.  **Fetch:** Stealth Nav to `transactions?issuer_number=55841`.
+5.  **Store:** Dedup & Append to `transactions_history.jsonl`.
+6.  **Compute:** `analyzer.evaluate(transactions)` -> Returns Score.
+7.  **Action:** If Score > Threshold -> Alert.
 
 **5. 核心逻辑参数**
 - **Window Period:** T+0 (只关注当天的净操作)。

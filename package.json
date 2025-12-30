@@ -1,0 +1,30 @@
+{
+  "name": "sedi_insider_tracker",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ggeennn/SEDI_Insider_Tracker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ggeennn/SEDI_Insider_Tracker/issues"
+  },
+  "homepage": "https://github.com/ggeennn/SEDI_Insider_Tracker#readme",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "cheerio": "^1.1.2",
+    "dotenv": "^17.2.3",
+    "playwright": "^1.57.0"
+  }
+}
