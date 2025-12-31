@@ -1,21 +1,24 @@
 /**
- * src/monitors/sedi_monitor.js (v3.2 - Non-Blocking Auth)
- * * Fix: Removed strict 'networkidle' wait to handle live video streams.
- * * Fix: Aggressive selector targeting for the Login button.
+ * src/monitors/sedi_monitor.js (v4.0 - Integrated Module)
+ * * Change: Export startMonitor() and accept a callback.
  */
 
 import { chromium } from 'playwright';
 import fs from 'fs';
+import path from 'path';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 const TARGET_URL = 'https://ceo.ca/@sedi';
-const STATE_FILE = 'monitor_state.json';
-const COOKIE_FILE = 'cookies.json';
+const STATE_DIR = 'state';
+const STATE_FILE = path.join(STATE_DIR, 'monitor_state.json');
+const COOKIE_FILE = path.join(STATE_DIR, 'cookies.json');
 
 const EMAIL = process.env.CEO_EMAIL;
 const PASSWORD = process.env.CEO_PASSWORD;
+
+if (!fs.existsSync(STATE_DIR)) fs.mkdirSync(STATE_DIR);
 
 function loadState() {
     try {
@@ -34,77 +37,44 @@ function saveState(timestamp) {
     } catch (e) { console.error("❌ Save State Error:", e); }
 }
 
-/**
- * src/monitors/sedi_monitor.js (Fix: Strict Mode Violation)
- * 修正: 使用 getByRole 精确点击 "Log in" 按钮，避开 "Subscribe" 按钮。
- */
 async function performLogin(page) {
+    // ... (保持原有的 performLogin 逻辑不变，代码太长省略，请保留你 v3.2 的代码) ...
+    // 务必保留 v3.2 中修复的 "Strict Mode Violation" 逻辑
     console.log("🔐 Starting Auth Sequence (Fast Mode)...");
-
     try {
-        // [Step 1] 寻找首页的 "Log In" 按钮 (Sidebar)
         const loginBtn = page.getByRole('button', { name: 'Log In', exact: true }).first();
         await loginBtn.waitFor({ state: 'visible', timeout: 10000 });
-        
         console.log("⚡ 'Log In' button visible. Clicking...");
         await loginBtn.click();
     } catch (e) {
         console.log("⚠️ 'Log In' button not found. Assuming already logged in.");
         return; 
     }
-
-    // [Step 2] 等待弹窗表单
     try {
         console.log("⏳ Waiting for login form...");
         await page.waitForSelector('input[name="email"]', { timeout: 5000 });
     } catch (e) {
-        console.error("❌ Login form did not pop up! Saving debug screenshot.");
-        await page.screenshot({ path: 'debug_no_form.png' });
-        throw e;
+        await page.screenshot({ path: 'debug_no_form.png' }); throw e;
     }
-
-    // [Step 3] 填表
-    console.log("📝 Filling credentials...");
     await page.fill('input[name="email"]', EMAIL);
     await page.fill('input[name="password"]', PASSWORD);
-
-    // [Step 4] 提交 (关键修正)
     console.log("🚀 Submitting...");
-    
-    // Fix: 之前使用了通用的 form button[type="submit"] 导致匹配到了侧边栏的 Subscribe 按钮
-    // 现在使用最精确的 Role 定位，且要求文本完全匹配 "Log in"
     await page.getByRole('button', { name: 'Log in', exact: true }).click();
-
-    // [Step 5] 等待登录完成
     console.log("⏳ Waiting for session cookie...");
     await page.waitForTimeout(5000); 
 }
 
 async function saveCookies(page) {
     const cookies = await page.context().cookies();
-    
-    if (cookies.length === 0) {
-        console.warn("⚠️ Warning: 0 Cookies captured.");
-    } else {
-        console.log(`🍪 Cookies captured: ${cookies.length}`);
-        // 检查是否有会员 session
-        const sessionCookie = cookies.find(c => c.name.includes('session'));
-        if (sessionCookie) {
-            console.log(`✅ FOUND SESSION COOKIE: ${sessionCookie.name}`);
-        } else {
-            console.log("⚠️ No explicit 'session' cookie found (might still work).");
-        }
-    }
-
     fs.writeFileSync(COOKIE_FILE, JSON.stringify(cookies, null, 2));
 }
 
 let latestProcessedTimestamp = loadState();
 
-async function startMonitor() {
-    console.log("Starting SEDI Monitor v3.2 (Fast)...");
+// [INTERFACE CHANGE] 增加 onSignal 回调
+export async function startMonitor(onSignal) {
+    console.log("Starting SEDI Monitor v4.0 (Integrated)...");
     
-    // 使用 args 屏蔽自动化特征，防止弹窗不出来
     const browser = await chromium.launch({ 
         headless: false,
         args: ['--disable-blink-features=AutomationControlled'] 
@@ -113,26 +83,28 @@ async function startMonitor() {
     await page.setViewportSize({ width: 1280, height: 800 });
 
     try {
-        // 只等待 DOM 加载完，不等图片和视频
         await page.goto(TARGET_URL, { waitUntil: 'domcontentloaded' });
-        
         await performLogin(page);
         await saveCookies(page);
 
         console.log("👀 Monitor loop starting...");
-        await scanForNewFilings(page); 
+        
+        // 传递回调函数给 scan
+        await scanForNewFilings(page, onSignal); 
+        
         setInterval(async () => {
-            await scanForNewFilings(page);
+            await scanForNewFilings(page, onSignal);
         }, 5000);
 
     } catch (error) {
-        console.error("❌ Critical Error:", error);
-        await page.screenshot({ path: 'error_state_v3.2.png' });
+        console.error("❌ Critical Monitor Error:", error);
     }
 }
 
-async function scanForNewFilings(page) {
+// [INTERFACE CHANGE] 接收 onSignal
+async function scanForNewFilings(page, onSignal) {
     try {
+        // ... (保持原有的 evaluate 抓取逻辑不变) ...
         const rawData = await page.evaluate(() => {
             const rows = Array.from(document.querySelectorAll('div[class*="Spiel_row"]'));
             return rows.map(row => {
@@ -151,6 +123,12 @@ async function scanForNewFilings(page) {
             if (data.timestamp > latestProcessedTimestamp) {
                 const dateStr = new Date(data.timestamp).toLocaleString();
                 console.log(`[${dateStr}] 🚨 NEW SIGNAL: ${data.ticker}`);
+                
+                // [INTEGRATION] 将发现的 Ticker 传给主程序
+                if (onSignal && typeof onSignal === 'function') {
+                    onSignal(data.ticker);
+                }
+
                 latestProcessedTimestamp = data.timestamp;
                 hasNewData = true;
             }
@@ -161,5 +139,3 @@ async function scanForNewFilings(page) {
         console.error("Scrape Error:", e.message);
     }
 }
-
-startMonitor();

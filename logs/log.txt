@@ -1,0 +1,869 @@
+⚙️ Processing: $DHB (Queue: 44)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=DHB
+⏳ Waiting for content (Status: 200)...
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $NFLD (Queue: 43)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=NFLD
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $DHB:
+🔥🔥 Timothy Young (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $5,460
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Davey, Gord (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $28,065
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Davey, Gord (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $30,155
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+📥 Fetching transactions for ID: 47138...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=47138&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $EIF (Queue: 42)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=EIF
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $NFLD:
+🔥🔥 Cater, Douglas Frederick (4 - Director of Issuer)
+   Score: 70 | Net Cash: $9,000
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Swinoga, Jeffrey Anthony (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 60 | Net Cash: $444,444,888,889
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider, 💰 Large Size (>50k)
+📥 Fetching transactions for ID: 28662...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=28662&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $FMAN (Queue: 41)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=FMAN
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $EIF:
+🔥🔥 Travis Raymond Muhr (5 - Senior Officer of Issuer)
+   Score: 90 | Net Cash: $54,496
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider, 💰 Large Size (>50k)
+🔥🔥 Richard Wowryk (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $12,599
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Travis Raymond Muhr (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $8,753
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+📥 Fetching transactions for ID: 47230...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=47230&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $HTRC (Queue: 40)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=HTRC
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $FMAN:
+🔥🔥 Moubarak, Bassam (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 90 | Net Cash: $88,633
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider, 💰 Large Size (>50k)
+🔥🔥 William Randall (5 - Senior Officer of Issuer)
+   Score: 90 | Net Cash: $210,000
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider, 💰 Large Size (>50k)
+🔥🔥 Moubarak, Bassam (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $9,625
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Paes-Braga, Brian Alexander (3 - 10% Security Holder of Issuer)
+   Score: 70 | Net Cash: $412,223
+   Reasons: 🔥 Market Buy (Code 10), 💰 Large Size (>50k)
+🔥🔥 Paes-Braga, Brian Alexander (3 - 10% Security Holder of Issuer)
+   Score: 70 | Net Cash: $177,800
+   Reasons: 🔥 Market Buy (Code 10), 💰 Large Size (>50k)
+🔥🔥 Moubarak, Bassam (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $19,000
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Moubarak, Bassam (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $18,600
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Paes-Braga, Brian Alexander (3 - 10% Security Holder of Issuer)
+   Score: 70 | Net Cash: $1,054,000
+   Reasons: 🔥 Market Buy (Code 10), 💰 Large Size (>50k)
+📥 Fetching transactions for ID: 53329...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=53329&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $KC (Queue: 39)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=KC
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+   💤 No significant signals found.
+📥 Fetching transactions for ID: 20799...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=20799&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 404)...
+
+⚙️ Processing: $LIFT (Queue: 38)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=LIFT
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 0 records.
+📥 Fetching transactions for ID: 43060...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=43060&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $LTC (Queue: 37)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=LTC
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+   💤 No significant signals found.
+📥 Fetching transactions for ID: 107695...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=107695&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $NCAU (Queue: 36)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=NCAU
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $LTC:
+🔥🔥 Johnson, Kevin David (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 90 | Net Cash: $83,200
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider, 💰 Large Size (>50k)
+🔥🔥 Johnson, Kevin David (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 90 | Net Cash: $84,000
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider, 💰 Large Size (>50k)
+🔥🔥 Johnson, Kevin David (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 90 | Net Cash: $84,000
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider, 💰 Large Size (>50k)
+🔥🔥 Harris, Mitchell James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $20,578
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Kaluski, Jason John Kenneth (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $14,099
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Harris, Mitchell James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $19,876
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Power, Stephen (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $16,275
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Kathy Turgeon (4 - Director of Issuer)
+   Score: 70 | Net Cash: $6,379
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Scott Robinson (4 - Director of Issuer)
+   Score: 70 | Net Cash: $31,200
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Harris, Mitchell James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $10,048
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Kaluski, Jason John Kenneth (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $13,003
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Scott Robinson (4 - Director of Issuer)
+   Score: 70 | Net Cash: $33,200
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Power, Stephen (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $11,340
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Harris, Mitchell James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $9,984
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Kaluski, Jason John Kenneth (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $12,864
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Power, Stephen (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $15,600
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+ℹ️ Kaluski, Jason John Kenneth (5 - Senior Officer of Issuer)
+   Score: 30 | Net Cash: $5,009
+   Reasons: 📅 Purchase Plan (Code 30), ⭐ Top Insider
+ℹ️ Power, Stephen (5 - Senior Officer of Issuer)
+   Score: 30 | Net Cash: $5,248
+   Reasons: 📅 Purchase Plan (Code 30), ⭐ Top Insider
+ℹ️ Johnson, Kevin David (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 30 | Net Cash: $6,353
+   Reasons: 📅 Purchase Plan (Code 30), ⭐ Top Insider
+📥 Fetching transactions for ID: 29680...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=29680&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $JPEG (Queue: 35)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=JPEG
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+   💤 No significant signals found.
+📥 Fetching transactions for ID: 47225...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=47225&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $NOAL (Queue: 34)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=NOAL
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $JPEG:
+🔥🔥 Fidelio Partners Pte Ltd. (4 - Director of Issuer)
+   Score: 70 | Net Cash: $6,000
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Taylor, Darcy (4 - Director of Issuer)
+   Score: 70 | Net Cash: $11,250
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Taylor, Darcy (4 - Director of Issuer)
+   Score: 60 | Net Cash: $131,688
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider, 💰 Large Size (>50k)
+ℹ️ Taylor, Darcy (4 - Director of Issuer)
+   Score: 40 | Net Cash: $7,500
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider
+ℹ️ Rutledge, Robert Mark (4 - Director of Issuer)
+   Score: 40 | Net Cash: $15,000
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider
+ℹ️ Taylor, Darcy (4 - Director of Issuer)
+   Score: 40 | Net Cash: $25,000
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider
+ℹ️ Rutledge, Robert Mark (4 - Director of Issuer)
+   Score: 40 | Net Cash: $21,875
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider
+📥 Fetching transactions for ID: 44023...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=44023&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $NUR (Queue: 33)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=NUR
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $NOAL:
+🔥🔥 Ofer Rafael Amir (3 - 10% Security Holder of Issuer)
+   Score: 70 | Net Cash: $700,000
+   Reasons: 🔥 Market Buy (Code 10), 💰 Large Size (>50k)
+🔥🔥 Gabriel Rubacha (4 - Director of Issuer)
+   Score: 60 | Net Cash: $823,430
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider, 💰 Large Size (>50k)
+🔥🔥 Hernan Miguel Zaballa (4 - Director of Issuer)
+   Score: 60 | Net Cash: $823,379
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider, 💰 Large Size (>50k)
+ℹ️ Ofer Rafael Amir (3 - 10% Security Holder of Issuer)
+   Score: 40 | Net Cash: $3,808,200
+   Reasons: 🔒 Private Placement (Code 11/16), 💰 Large Size (>50k)
+ℹ️ Estanislao José Zaballa (2 - Subsidiary of Issuer)
+   Score: 40 | Net Cash: $337,217
+   Reasons: 🔒 Private Placement (Code 11/16), 💰 Large Size (>50k)
+📥 Fetching transactions for ID: 36997...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=36997&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $VEXT (Queue: 32)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=VEXT
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $NUR:
+🔥🔥 Denis Lambert (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $14,260
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Letourneau, Francis (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $14,960
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Fonseca, Vitor M (4 - Director of Issuer)
+   Score: 60 | Net Cash: $79,998
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider, 💰 Large Size (>50k)
+📥 Fetching transactions for ID: 39389...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=39389&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $SCRI (Queue: 31)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=SCRI
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $VEXT:
+🔥🔥 Smith, Trevor Richard (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $33,007
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Smith, Trevor Richard (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $15,140
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Eric Jay Offenberger (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $7,150
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+📥 Fetching transactions for ID: 52051...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=52051&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $RSI (Queue: 30)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=RSI
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $SCRI:
+🔥🔥 Bures, Peter (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $9,195
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Bures, Peter (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $6,044
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+📥 Fetching transactions for ID: 9339...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=9339&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 404)...
+
+⚙️ Processing: $CNTR (Queue: 29)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=CNTR
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 0 records.
+📥 Fetching transactions for ID: 33660...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=33660&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $GCP (Queue: 28)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=GCP
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+   💤 No significant signals found.
+📥 Fetching transactions for ID: 6034...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=6034&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 404)...
+
+⚙️ Processing: $GRUN (Queue: 27)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=GRUN
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 0 records.
+📥 Fetching transactions for ID: 45704...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=45704&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $FOOD (Queue: 26)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=FOOD
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+   💤 No significant signals found.
+📥 Fetching transactions for ID: 37021...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=37021&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $URE (Queue: 25)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=URE
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $FOOD:
+🔥🔥 Khabbaz, John (4 - Director of Issuer)
+   Score: 90 | Net Cash: $51,855
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider, 💰 Large Size (>50k)
+🔥🔥 Khabbaz, John (4 - Director of Issuer)
+   Score: 90 | Net Cash: $50,925
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider, 💰 Large Size (>50k)
+🔥🔥 Phoenician Capital LLC (3 - 10% Security Holder of Issuer)
+   Score: 70 | Net Cash: $51,855
+   Reasons: 🔥 Market Buy (Code 10), 💰 Large Size (>50k)
+🔥🔥 Phoenician Capital LLC (3 - 10% Security Holder of Issuer)
+   Score: 70 | Net Cash: $50,925
+   Reasons: 🔥 Market Buy (Code 10), 💰 Large Size (>50k)
+🔥🔥 Khabbaz, John (4 - Director of Issuer)
+   Score: 70 | Net Cash: $16,975
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Khabbaz, John (4 - Director of Issuer)
+   Score: 70 | Net Cash: $32,140
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+ℹ️ Phoenician Capital LLC (3 - 10% Security Holder of Issuer)
+   Score: 50 | Net Cash: $16,975
+   Reasons: 🔥 Market Buy (Code 10)
+ℹ️ Phoenician Capital LLC (3 - 10% Security Holder of Issuer)
+   Score: 50 | Net Cash: $32,140
+   Reasons: 🔥 Market Buy (Code 10)
+📥 Fetching transactions for ID: 21840...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=21840&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $ADG (Queue: 24)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=ADG
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+   💤 No significant signals found.
+📥 Fetching transactions for ID: 25525...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=25525&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $BUX (Queue: 23)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=BUX
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $ADG:
+ℹ️ Andrew Olaf Carne (6 - Director or Senior Officer of 10% Security Holder)
+   Score: 40 | Net Cash: $15,000
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider
+ℹ️ Longhurst, Grant Montgomery (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 40 | Net Cash: $10,000
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider
+📥 Fetching transactions for ID: 36484...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=36484&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $CFW (Queue: 22)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=CFW
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $BUX:
+🔥🔥 HUANG, GUOYU (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $47,975
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+📥 Fetching transactions for ID: 2062...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=2062&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $TPC (Queue: 21)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=TPC
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $CFW:
+🔥🔥 PELLERIN, CHARLES (4 - Director of Issuer)
+   Score: 60 | Net Cash: $2,280,106
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider, 💰 Large Size (>50k)
+ℹ️ Armoyan, Sime (3 - 10% Security Holder of Issuer)
+   Score: 40 | Net Cash: $36,290,672
+   Reasons: 🔒 Private Placement (Code 11/16), 💰 Large Size (>50k)
+ℹ️ Dahlseide, Tyler (5 - Senior Officer of Issuer)
+   Score: 40 | Net Cash: $21,708
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider
+ℹ️ Benson, Holly (4 - Director of Issuer)
+   Score: 40 | Net Cash: $20,899
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider
+📥 Fetching transactions for ID: 7735...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=7735&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 404)...
+
+⚙️ Processing: $MOGO (Queue: 20)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=MOGO
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 0 records.
+📥 Fetching transactions for ID: 3606...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=3606&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $QEC (Queue: 19)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=QEC
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $MOGO:
+🔥🔥 Feller, David Marshall (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $12,324
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Feller, David Marshall (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $8,500
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Feller, David Marshall (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $9,500
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Feller, David Marshall (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $18,941
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Gregory Dean Feller (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $18,000
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Feller, David Marshall (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $24,500
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+📥 Fetching transactions for ID: 19364...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=19364&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $TOC (Queue: 18)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=TOC
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+   💤 No significant signals found.
+📥 Fetching transactions for ID: 46469...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=46469&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $VET (Queue: 17)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=VET
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $TOC:
+🔥🔥 Christopher John Gordon (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $12,900
+🔥🔥 Christopher John Gordon (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $12,900
+   Score: 70 | Net Cash: $12,900
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Christopher John Gordon (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $8,400
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+📥 Fetching transactions for ID: 30412...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=30412&page=1&limit=20&date_sort_field=transaction_date
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=30412&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $B (Queue: 16)
+⚙️ Processing: $B (Queue: 16)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=B
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $VET:
+🔥🔥 Stadnyk, Myron Maurice (4 - Director of Issuer)
+   Score: 90 | Net Cash: $57,794
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider, 💰 Large Size (>50k)
+📥 Fetching transactions for ID: 23628...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=23628&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $CPMD (Queue: 15)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=CPMD
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $B:
+🔥🔥 Redfern, Richard Robert (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $35,650
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+📥 Fetching transactions for ID: 47578...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=47578&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $LIB (Queue: 14)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=LIB
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+   💤 No significant signals found.
+📥 Fetching transactions for ID: 8955...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=8955&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $GFR (Queue: 13)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=GFR
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $LIB:
+ℹ️ Hookey, Kyle Robert (4 - Director of Issuer)
+   Score: 40 | Net Cash: $37,057
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider
+📥 Fetching transactions for ID: 102020...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=102020&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $PER (Queue: 12)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=PER
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $GFR:
+🔥🔥 Belak, Travis Lee (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $9,300
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+📥 Fetching transactions for ID: 11091...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=11091&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $VIPR (Queue: 11)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=VIPR
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+   💤 No significant signals found.
+📥 Fetching transactions for ID: 42333...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=42333&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $SGO (Queue: 10)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=SGO
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $VIPR:
+ℹ️ Sprott, Eric (3 - 10% Security Holder of Issuer)
+   Score: 40 | Net Cash: $3,750,000
+   Reasons: 🔒 Private Placement (Code 11/16), 💰 Large Size (>50k)
+ℹ️ 2176423 Ontario Ltd. (3 - 10% Security Holder of Issuer)
+   Score: 40 | Net Cash: $3,750,000
+   Reasons: 🔒 Private Placement (Code 11/16), 💰 Large Size (>50k)
+ℹ️ 2176423 Ontario Ltd. (3 - 10% Security Holder of Issuer)
+   Score: 40 | Net Cash: $834,185
+   Reasons: 🔒 Private Placement (Code 11/16), 💰 Large Size (>50k)
+ℹ️ Sprott, Eric (3 - 10% Security Holder of Issuer)
+   Score: 40 | Net Cash: $379,175
+   Reasons: 🔒 Private Placement (Code 11/16), 💰 Large Size (>50k)
+📥 Fetching transactions for ID: 3502...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=3502&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $DMET (Queue: 9)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=DMET
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $SGO:
+🔥🔥 Darch, John Michael (4 - Director of Issuer)
+   Score: 60 | Net Cash: $103,200
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider, 💰 Large Size (>50k)
+🔥🔥 Kenneth MacLeod (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 60 | Net Cash: $790,119
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider, 💰 Large Size (>50k)
+ℹ️ Salil Dhaumya (5 - Senior Officer of Issuer)
+   Score: 40 | Net Cash: $39,467
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider
+📥 Fetching transactions for ID: 8464...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=8464&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $AUOZ (Queue: 8)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=AUOZ
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $DMET:
+🔥🔥 Iacono, Serafino (4 - Director of Issuer)
+   Score: 60 | Net Cash: $84,939
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider, 💰 Large Size (>50k)
+🔥🔥 Iacono, Serafino (4 - Director of Issuer)
+   Score: 60 | Net Cash: $1,572,500
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider, 💰 Large Size (>50k)
+ℹ️ Aris Mining Corporation (3 - 10% Security Holder of Issuer)
+   Score: 40 | Net Cash: $52,020
+   Reasons: 🔒 Private Placement (Code 11/16), 💰 Large Size (>50k)
+📥 Fetching transactions for ID: 51236...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=51236&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $GTII (Queue: 7)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=GTII
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $AUOZ:
+🔥🔥 Florek, John (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $10,643
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Florek, John (4 - Director of Issuer, 5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $14,500
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Williamson, John (4 - Director of Issuer)
+   Score: 70 | Net Cash: $13,800
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Williamson, John (4 - Director of Issuer)
+   Score: 70 | Net Cash: $6,900
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Williamson, John (4 - Director of Issuer)
+   Score: 70 | Net Cash: $5,750
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Williamson, John (4 - Director of Issuer)
+   Score: 60 | Net Cash: $108,334
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider, 💰 Large Size (>50k)
+📥 Fetching transactions for ID: 19701...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=19701&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $ROAD (Queue: 6)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=ROAD
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+   💤 No significant signals found.
+📥 Fetching transactions for ID: 45637...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=45637&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $SURE (Queue: 5)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=SURE
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $ROAD:
+ℹ️ 1521344 BC Ltd (3 - 10% Security Holder of Issuer)
+   Score: 50 | Net Cash: $9,750
+   Reasons: 🔥 Market Buy (Code 10)
+ℹ️ Reynolds, Damien Edward (3 - 10% Security Holder of Issuer)
+   Score: 50 | Net Cash: $9,750
+   Reasons: 🔥 Market Buy (Code 10)
+ℹ️ Mineral Road Partners Inc. (3 - 10% Security Holder of Issuer)
+   Score: 40 | Net Cash: $1,500,000
+   Reasons: 🔒 Private Placement (Code 11/16), 💰 Large Size (>50k)
+ℹ️ Reynolds, Damien Edward (3 - 10% Security Holder of Issuer)
+   Score: 40 | Net Cash: $1,500,000
+   Reasons: 🔒 Private Placement (Code 11/16), 💰 Large Size (>50k)
+📥 Fetching transactions for ID: 52204...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=52204&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $AQS (Queue: 4)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=AQS
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $SURE:
+🔥🔥 MaLette, Charles Henry (4 - Director of Issuer)
+   Score: 70 | Net Cash: $6,000
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 MaLette, Charles Henry (4 - Director of Issuer)
+   Score: 70 | Net Cash: $10,800
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 MaLette, Charles Henry (4 - Director of Issuer)
+   Score: 70 | Net Cash: $7,800
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 MaLette, Charles Henry (4 - Director of Issuer)
+   Score: 60 | Net Cash: $195,000
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider, 💰 Large Size (>50k)
+📥 Fetching transactions for ID: 24844...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=24844&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 404)...
+
+⚙️ Processing: $BHS (Queue: 3)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=BHS
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 0 records.
+📥 Fetching transactions for ID: 21975...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=21975&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $PCLO (Queue: 2)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=PCLO
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $BHS:
+ℹ️ O'Neill, Graeme (5 - Senior Officer of Issuer)
+   Score: 40 | Net Cash: $15,000
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider
+ℹ️ O'Neill, Graeme (5 - Senior Officer of Issuer)
+   Score: 40 | Net Cash: $12,000
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider
+📥 Fetching transactions for ID: 43726...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=43726&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $SRC (Queue: 1)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=SRC
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $PCLO:
+🔥🔥 Lustig, Marc (4 - Director of Issuer)
+   Score: 70 | Net Cash: $5,830
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Lustig, Marc (4 - Director of Issuer)
+   Score: 70 | Net Cash: $16,350
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Lustig, Marc (4 - Director of Issuer)
+   Score: 70 | Net Cash: $14,085
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Lustig, Marc (4 - Director of Issuer)
+   Score: 70 | Net Cash: $7,110
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Lustig, Marc (4 - Director of Issuer)
+   Score: 70 | Net Cash: $15,280
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+📥 Fetching transactions for ID: 31800...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=31800&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+
+⚙️ Processing: $ALTN (Queue: 0)
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/search_companies?query=ALTN
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $SRC:
+🔥🔥 Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $8,734
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $11,340
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $31,200
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $22,515
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $10,800
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $6,300
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $7,770
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $7,000
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $29,924
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $48,888
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $7,200
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 70 | Net Cash: $18,963
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+🔥🔥 Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 60 | Net Cash: $168,000
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider, 💰 Large Size (>50k)
+🔥🔥 b p davies (4 - Director of Issuer)
+   Score: 60 | Net Cash: $584,000
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider, 💰 Large Size (>50k)
+ℹ️ Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 40 | Net Cash: $43,750
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider
+ℹ️ Berlet, Christopher James (5 - Senior Officer of Issuer)
+   Score: 40 | Net Cash: $12,000
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider
+📥 Fetching transactions for ID: 49845...
+🚀 Navigating to: https://new-api.ceo.ca/api/sedi/transactions?issuer_number=49845&page=1&limit=20&date_sort_field=transaction_date
+⏳ Waiting for content (Status: 200)...
+   📥 Fetched 20 records.
+   💾 Saved 20 new records.
+
+🔔 ANALYSIS RESULT for $ALTN:
+🔥🔥 Terrance Kamil Salman (4 - Director of Issuer)
+   Score: 70 | Net Cash: $6,000
+   Reasons: 🔥 Market Buy (Code 10), ⭐ Top Insider
+ℹ️ Gentile, Michael (3 - 10% Security Holder of Issuer)
+   Score: 40 | Net Cash: $1,314,500
+   Reasons: 🔒 Private Placement (Code 11/16), 💰 Large Size (>50k)
+ℹ️ Terrance Kamil Salman (4 - Director of Issuer)
+   Score: 40 | Net Cash: $50,000
+   Reasons: 🔒 Private Placement (Code 11/16), ⭐ Top Insider

@@ -1,15 +1,16 @@
 /**
- * src/services/api_client.js (v4.1 - Stealth Mode)
- * * Feature: Mask navigator.webdriver to fool Cloudflare.
- * * Feature: Wait for Cloudflare challenge to complete.
+ * src/services/api_client.js (v5.0 - Raw Data Preservation)
+ * * Strategy: ELT (Extract-Load-Transform).
+ * * Change: Store the full original JSON object in a 'raw' field.
  */
 
 import { chromium } from 'playwright'; 
 import fs from 'fs';
-import { Parser } from '../utils/parser.js'; // 保持引用
+import path from 'path'; 
 
 const BASE_URL = 'https://new-api.ceo.ca/api/sedi';
-const COOKIE_FILE = 'cookies.json';
+const STATE_DIR = 'state'; 
+const COOKIE_FILE = path.join(STATE_DIR, 'cookies.json');
 
 function loadCookies() {
     try {
@@ -95,17 +96,14 @@ export const ApiService = {
         }
     },
     
-    // ... getIssuerId 和 getTransactions 保持不变 ...
-    // (请确保把它们也复制回来，或者只替换上面的 _browserFetch 函数)
     async getIssuerId(ticker) {
-        // ... (保持原样)
         const cleanTicker = ticker.replace('$', '').toUpperCase();
         const url = `${BASE_URL}/search_companies?query=${cleanTicker}`;
         const data = await this._browserFetch(url);
-        // ...
+
         if(!data || !data.results) return null; // 简单防崩
         const results = data.results;
-        // ...
+
         const exactMatch = results.find(item => {
              const symbol = item.symbol.toUpperCase();
              return symbol === cleanTicker || symbol.startsWith(`${cleanTicker}.`);
@@ -115,24 +113,31 @@ export const ApiService = {
     },
 
     async getTransactions(issuerId) {
-        // ... (保持原样)
         if (!issuerId) return [];
-        const url = `${BASE_URL}/transactions?issuer_number=${issuerId}&page=1&limit=20&date_sort_field=transaction_date`;
-        const data = await this._browserFetch(url);
-        // ...
-        const rawTxs = data.transactions;
-        if(!rawTxs) return []; // 简单防崩
+        
+        try {
+            console.log(`📥 Fetching transactions for ID: ${issuerId}...`);
+            const url = `${BASE_URL}/transactions?issuer_number=${issuerId}&page=1&limit=20&date_sort_field=transaction_date`;
+            
+            const data = await this._browserFetch(url);
+            const rawTxs = data.transactions;
 
-        return rawTxs.map(tx => ({
-            id: tx.id,
-            date: tx.transaction_date,
-            typeCode: Parser.extractTxCode(tx.type),
-            typeDesc: tx.type,
-            amount: Parser.cleanNumber(tx.number_moved),
-            price: Parser.cleanNumber(tx.price),
-            insider: tx.insider_name,
-            relation: tx.relationship_type,
-            security: tx.security
-        }));
+            if(!rawTxs) return [];
+
+            return rawTxs.map(tx => ({
+                // --- 索引层 (用于快速查找和去重) ---
+                sediId: tx.sedi_transaction_id, // 唯一主键
+                symbol: tx.symbol,
+                date: tx.transaction_date,
+                
+                // --- 数据层 (原始数据全量备份) ---
+                // 未来任何算法升级，都从这个 raw 对象里取值
+                raw: tx 
+            }));
+
+        } catch (error) {
+            console.error(`❌ API Error: ${error.message}`);
+            return [];
+        }
     }
 };
