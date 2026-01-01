@@ -1,7 +1,7 @@
 /**
- * src/services/api_client.js (v5.0 - Raw Data Preservation)
- * * Strategy: ELT (Extract-Load-Transform).
- * * Change: Store the full original JSON object in a 'raw' field.
+ * src/services/api_client.js (v5.2 - Robust Error Handling & Filters)
+ * * Fix: Added detailed error logging to debug empty returns.
+ * * Feature: Filters out 'D' (Deleted) and 'O' (Old) records.
  */
 
 import { chromium } from 'playwright'; 
@@ -25,14 +25,9 @@ function loadCookies() {
 
 export const ApiService = {
     async _browserFetch(url) {
-        // [隐身术 Step 1] 启动参数屏蔽自动化特征
         const browser = await chromium.launch({ 
-            headless: false,
-            args: [
-                '--disable-blink-features=AutomationControlled', // 核心：禁用自动化控制特征
-                '--no-sandbox',
-                '--disable-setuid-sandbox'
-            ]
+            headless: false, // 保持 false 以便调试 Cloudflare
+            args: ['--disable-blink-features=AutomationControlled', '--no-sandbox', '--disable-setuid-sandbox']
         }); 
         
         try {
@@ -41,51 +36,33 @@ export const ApiService = {
                 viewport: { width: 1280, height: 720 }
             });
             
-            // [隐身术 Step 2] 注入脚本，彻底删除 navigator.webdriver 属性
+            // 屏蔽自动化特征
             await context.addInitScript(() => {
-                Object.defineProperty(navigator, 'webdriver', {
-                    get: () => undefined,
-                });
+                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
             });
 
-            // 注入 Cookie
             const cookies = loadCookies();
-            if (cookies.length > 0) {
-                await context.addCookies(cookies);
-            }
+            if (cookies.length > 0) await context.addCookies(cookies);
 
             const page = await context.newPage();
-
-            console.log(`🚀 Navigating to: ${url}`);
             
-            // 访问页面
-            const response = await page.goto(url, { waitUntil: 'domcontentloaded' });
-
-            // [核心修正] 处理 Cloudflare 挑战
-            // 如果 Cloudflare 正在检查浏览器，它会返回 403 或 503，并显示 "Just a moment..."
-            // 我们不能立即报错，而是要等一等
+            // 增加超时设置 (30秒)
+            const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
             
-            console.log(`⏳ Waiting for content (Status: ${response.status()})...`);
-            
-            // 强制等待 5 秒，给 Cloudflare 自动跳转的时间
-            await page.waitForTimeout(5000);
-
-            // 二次检查：获取当前页面文本
+            // Cloudflare Check
             const bodyText = await page.innerText('body');
-            
-            // 检查是否还在 Cloudflare 等待页
             if (bodyText.includes("Just a moment") || bodyText.includes("Verify you are human")) {
-                 console.warn("⚠️ Still stuck in Cloudflare challenge...");
-                 // 此时可以截图调试: await page.screenshot({ path: 'cf_block.png' });
-                 throw new Error("Cloudflare Challenge Blocked");
+                 console.warn("⚠️ Cloudflare challenge detected... Waiting 5s...");
+                 await page.waitForTimeout(5000); 
             }
 
-            // 尝试解析 JSON
+            // 尝试解析
+            const finalContent = await page.innerText('body');
             try {
-                return JSON.parse(bodyText);
+                return JSON.parse(finalContent);
             } catch (e) {
-                // 如果解析失败，说明返回的不是 JSON（可能是 HTML 错误页）
-                console.error("❌ Response is not JSON. Preview:", bodyText.substring(0, 100));
+                // 关键调试信息：如果这里失败，打印一部分返回内容看看是什么
+                console.error(`❌ JSON Parse Error. Content preview: ${finalContent.substring(0, 100)}...`);
                 throw new Error("Invalid JSON Response");
             }
 
@@ -97,19 +74,22 @@ export const ApiService = {
     },
     
     async getIssuerId(ticker) {
-        const cleanTicker = ticker.replace('$', '').toUpperCase();
-        const url = `${BASE_URL}/search_companies?query=${cleanTicker}`;
-        const data = await this._browserFetch(url);
+        try {
+            const cleanTicker = ticker.replace('$', '').toUpperCase();
+            const url = `${BASE_URL}/search_companies?query=${cleanTicker}`;
+            const data = await this._browserFetch(url);
 
-        if(!data || !data.results) return null; // 简单防崩
-        const results = data.results;
-
-        const exactMatch = results.find(item => {
-             const symbol = item.symbol.toUpperCase();
-             return symbol === cleanTicker || symbol.startsWith(`${cleanTicker}.`);
-        });
-        if (exactMatch) return exactMatch.issuer_no;
-        return results[0].issuer_no;
+            if(!data || !data.results) return null;
+            
+            const exactMatch = data.results.find(item => {
+                 const symbol = item.symbol.toUpperCase();
+                 return symbol === cleanTicker || symbol.startsWith(`${cleanTicker}.`);
+            });
+            return exactMatch ? exactMatch.issuer_no : data.results[0].issuer_no;
+        } catch (error) {
+            console.error(`❌ Error getting Issuer ID for ${ticker}: ${error.message}`);
+            return null;
+        }
     },
 
     async getTransactions(issuerId) {
@@ -120,23 +100,35 @@ export const ApiService = {
             const url = `${BASE_URL}/transactions?issuer_number=${issuerId}&page=1&limit=20&date_sort_field=transaction_date`;
             
             const data = await this._browserFetch(url);
+            
+            if (!data || !data.transactions) {
+                console.warn(`⚠️ No transactions field in response for ID ${issuerId}`);
+                return [];
+            }
+
             const rawTxs = data.transactions;
 
-            if(!rawTxs) return [];
+            // [CRITICAL FILTER] 过滤掉状态为 'D' (Deleted) 或 'O' (Original) 的记录
+            const validTxs = rawTxs.filter(tx => {
+                const state = tx.state ? tx.state.toUpperCase() : '';
+                return !['D', 'O'].includes(state);
+            });
 
-            return rawTxs.map(tx => ({
-                // --- 索引层 (用于快速查找和去重) ---
-                sediId: tx.sedi_transaction_id, // 唯一主键
+            // 如果过滤后变少了，打印一下以供确认
+            if (validTxs.length < rawTxs.length) {
+                console.log(`ℹ️ Filtered ${rawTxs.length - validTxs.length} duplicate/deleted records.`);
+            }
+
+            return validTxs.map(tx => ({
+                sediId: tx.sedi_transaction_id,
                 symbol: tx.symbol,
                 date: tx.transaction_date,
-                
-                // --- 数据层 (原始数据全量备份) ---
-                // 未来任何算法升级，都从这个 raw 对象里取值
                 raw: tx 
             }));
 
         } catch (error) {
-            console.error(`❌ API Error: ${error.message}`);
+            // 这里现在会打印出具体的错误，而不是静默失败
+            console.error(`❌ API Error (getTransactions): ${error.message}`);
             return [];
         }
     }

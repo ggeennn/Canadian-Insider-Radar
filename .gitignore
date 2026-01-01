@@ -1,4 +1,4 @@
 node_modules
 .env
 cookies.json
-docs/seed
+docs

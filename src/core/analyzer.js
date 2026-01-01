@@ -1,258 +1,289 @@
 /**
- * src/core/analyzer.js (v3.0 - Professional SEDI Codes)
- * * Feature: Full SEDI Transaction Code Support.
- * * Logic: Distinguish between Grants (Comp), Exercises (Conversion), and Market Buys (Conviction).
- * * Ref: Official SEDI Codes (10, 11, 16, 30, 50-59, etc.)
+ * src/core/analyzer.js (v5.2 - Currency & Dedupe)
+ * * Feature: USD Currency Conversion (Fixed rate 1.40).
+ * * Feature: Code 30 (Plan Buy) inclusion.
+ * * Stability: Transaction Deduplication by ID.
  */
 
 import { Parser } from '../utils/parser.js';
 
-// --- A. SEDI Code Definitions ---
-const CODES = {
-    // General
-    OPENING_BALANCE: '00',
-    PUBLIC_MARKET: '10',    // The Gold Standard (Buy/Sell)
-    PRIVATE_MARKET: '11',
-    PROSPECTUS: '15',
-    PROSPECTUS_EXEMPT: '16', // Private Placement (Accredited Investors)
-    TAKEOVER: '22',
-    PLAN: '30',             // ESPP / DRIP (Passive)
-    STOCK_DIVIDEND: '35',
-    CONVERSION: '36',
-    
-    // Issuer Derivatives (The Noise Makers)
-    GRANT_OPTIONS: '50',
-    EXERCISE_OPTIONS: '51',
-    EXPIRATION_OPTIONS: '52',
-    GRANT_WARRANTS: '53',
-    EXERCISE_WARRANTS: '54',
-    EXPIRATION_WARRANTS: '55',
-    GRANT_RIGHTS: '56',     // RSU/DSU Grants often here
-    EXERCISE_RIGHTS: '57',  // RSU/DSU Settlement
-    EXPIRATION_RIGHTS: '58',
-    EXERCISE_CASH: '59'
+const CONFIG = {
+    SCORING: {
+        BASE_MARKET_BUY: 50,    
+        BASE_PRIVATE_BUY: 35,   
+        BASE_EXERCISE: 15,      
+        BASE_PLAN_BUY: 10,      // [NEW] 自动定投计划
+        RANK_BONUS: 20,         
+        SIZE_BONUS: 20,         
+        CONVICTION_BONUS: 25,   
+        LATE_FILING_BONUS: 10,  
+        CLUSTER_MULTIPLIER: 0.2 
+    },
+    THRESHOLDS: {
+        LARGE_SIZE: 50000,
+        HIGH_CONVICTION_PCT: 0.20, 
+        LATE_FILING_DAYS: 5,
+        ANOMALY_CAP: 100000000,
+        USD_CAD_RATE: 1.40      // [NEW] 汇率常量
+    },
+    CODES: {
+        PUBLIC_BUY: '10',
+        PRIVATE_BUY: ['11', '16'],
+        PLAN_BUY: ['30'],       // [NEW]
+        EXERCISE: ['51', '54', '57', '59'],
+        GRANT: ['50', '53', '56']
+    }
 };
 
-// Security Types Keywords (用于识别衍生品)
-const DERIVATIVE_KEYWORDS = [
-    'Option', 'Warrant', 'Right', 'RSU', 'DSU', 'PSU', 'Unit', 
-    'Debenture', 'Deferred', 'Restricted', 'Performance'
-];
-
 export class Analyzer {
-    /**
-     * Analyze a batch of transactions.
-     * @param {Array} records - Records containing { raw: { ... } } structure
-     * @param {Set} watchlist - Tickers to watch closely
-     */
     static analyze(records, watchlist = new Set()) {
-        const grouped = this._groupByInsiderAndDate(records);
-        const signals = [];
+        // [STEP 0] Deduplication Strategy (ID 去重)
+        // 防止 API 返回修正前(A)和修正后(New)的两条记录导致重复计算
+        const uniqueMap = new Map();
+        records.forEach(r => {
+            // Map 的特性：后设置的 key 会覆盖前面的。
+            // 假设 records 按时间排序，保留最新的；或者直接信赖 ID 唯一性
+            uniqueMap.set(r.raw.sedi_transaction_id, r);
+        });
+        const uniqueRecords = Array.from(uniqueMap.values());
 
-        for (const key in grouped) {
-            const group = grouped[key];
-            const ticker = group[0].raw.symbol; 
-            const isWatchlisted = watchlist.has(ticker);
+        // Step 1: Group
+        const tickerGroups = this._groupByTicker(uniqueRecords);
+        const allSignals = [];
 
-            const result = this._evaluateGroup(group, isWatchlisted);
+        for (const ticker in tickerGroups) {
+            const tickerRecords = tickerGroups[ticker];
+            // [CRITICAL FIX] Suffix Handling for Watchlist
+            // API returns "AEC.TO", Watchlist has "AEC".
+            // We strip the suffix to check against the watchlist.
+            const cleanTicker = ticker.split('.')[0]; // "AEC.TO" -> "AEC"
             
-            // Filter Logic
-            if (isWatchlisted) {
-                // Watchlist: Report ANY activity that isn't purely noise
-                if (result.score !== 0 || result.isRiskAlert || result.isSignificant) {
-                    result.tags.push("👀 WATCHLIST");
-                    signals.push(result);
-                }
-            } else {
-                // Standard: Only High Score Buys
-                if (result.score > 0 && result.netCashInvested > 5000) {
-                    signals.push(result);
+            // Check both: Raw ("AEC.TO") OR Clean ("AEC")
+            const isWatchlisted = watchlist.has(ticker) || watchlist.has(cleanTicker);
+            
+            const tickerSignals = this._analyzeTicker(ticker, tickerRecords, isWatchlisted);
+            allSignals.push(...tickerSignals);
+        }
+
+        return allSignals.sort((a, b) => b.score - a.score);
+    }
+
+    static _groupByTicker(records) {
+        return records.reduce((acc, record) => {
+            const ticker = record.symbol || record.raw.symbol;
+            if (!acc[ticker]) acc[ticker] = [];
+            acc[ticker].push(record);
+            return acc;
+        }, {});
+    }
+
+    static _groupByInsider(records) {
+        return records.reduce((acc, record) => {
+            const name = record.raw.insider_name;
+            if (!acc[name]) acc[name] = [];
+            acc[name].push(record);
+            return acc;
+        }, {});
+    }
+
+    static _analyzeTicker(ticker, records, isWatchlisted) {
+        const insiderGroups = this._groupByInsider(records);
+        const insiderSignals = [];
+        const buyingInsiders = new Set();
+
+        for (const insiderName in insiderGroups) {
+            const iRecords = insiderGroups[insiderName];
+            const signal = this._evaluateInsider(ticker, insiderName, iRecords, isWatchlisted);
+            
+            if (signal) {
+                insiderSignals.push(signal);
+                if (signal.score > 0 && signal.netCashInvested > 0) {
+                    buyingInsiders.add(insiderName);
                 }
             }
         }
-        return signals.sort((a, b) => b.score - a.score);
-    }
 
-    static _groupByInsiderAndDate(records) {
-        const groups = {};
-        records.forEach(record => {
-            const tx = record.raw;
-            // Key: Insider + Date (Transaction Date, not Filing Date for analysis logic)
-            // Note: In backtesting, we might verify filing_date lag.
-            const key = `${tx.insider_name}|${tx.transaction_date}`;
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(record);
+        // Consensus Logic
+        const buyerCount = buyingInsiders.size;
+        if (buyerCount > 1) {
+            const multiplier = 1 + ((buyerCount - 1) * CONFIG.SCORING.CLUSTER_MULTIPLIER); 
+            insiderSignals.forEach(sig => {
+                if (sig.score > 0 && sig.netCashInvested > 0) {
+                    sig.score = Math.round(sig.score * multiplier);
+                    sig.reasons.push(`👥 Consensus (${buyerCount})`);
+                }
+            });
+        }
+
+        return insiderSignals.filter(sig => {
+            if (sig.isWatchlisted) return true; // Watchlist 强制显示
+            if (sig.score <= 0) return false;
+            return sig.score >= 20 && Math.abs(sig.netCashInvested) > 5000;
         });
-        return groups;
     }
 
-    static _evaluateGroup(recordList, isWatchlisted) {
+    static _evaluateInsider(ticker, insiderName, recordList, isWatchlisted) {
+        const meta = recordList[0].raw; 
+        
         let buyVol = 0; let sellVol = 0;
         let buyCost = 0; let sellProceeds = 0;
         
-        // Flags
-        let hasPublicBuy = false;   // Code 10 Buy
-        let hasPublicSell = false;  // Code 10 Sell
-        let hasPrivateBuy = false;  // Code 11/16
-        let hasExercise = false;    // Code 51/54/57/59
-        let hasGrant = false;       // Code 50/53/56
-        let hasPlan = false;        // Code 30
+        let hasPublicBuy = false; 
+        let hasPrivateBuy = false;
+        let hasPlanBuy = false; // [NEW]
+        let hasExercise = false; 
+        let hasSell = false;
 
-        const meta = recordList[0].raw;
-        const summary = {
-            insider: meta.insider_name,
-            date: meta.transaction_date,
-            relation: meta.relationship_type,
-            ticker: meta.symbol,
-            reasons: [],
-            tags: [],
-            isRiskAlert: false,
-            isSignificant: false
-        };
+        const sortedByDate = [...recordList].sort((a, b) => 
+            new Date(b.raw.transaction_date) - new Date(a.raw.transaction_date)
+        );
+        const finalBalance = sortedByDate.length > 0 ? Parser.cleanNumber(sortedByDate[0].raw.balance) : 0;
 
-        // --- A. Process Transactions ---
-        recordList.forEach(record => {
-            const tx = record.raw;
+        recordList.forEach(r => {
+            const tx = r.raw;
+            const code = Parser.extractTxCode(tx.type);
             
-            // 1. Parse Numbers
-            // Price Logic: Try price -> unit_price -> 0
-            let priceVal = Parser.cleanNumber(tx.price);
-            if (priceVal === 0 && tx.unit_price) {
-                priceVal = Parser.cleanNumber(tx.unit_price);
+            let price = Parser.cleanNumber(tx.price);
+            if (price === 0) price = Parser.cleanNumber(tx.unit_price);
+
+            const amount = Parser.cleanNumber(tx.number_moved);
+            const absAmount = Math.abs(amount);
+
+            // [NEW] Currency Conversion Logic
+            // 检查 exchange_unit_price 是否包含 USD 或 U.S.
+            let currencyMultiplier = 1.0;
+            const currencyField = (tx.exchange_unit_price || tx.exchange_price || "").toUpperCase();
+            if (currencyField.includes("USD") || currencyField.includes("U.S.")) {
+                currencyMultiplier = CONFIG.THRESHOLDS.USD_CAD_RATE;
             }
-            
-            const rawAmount = Parser.cleanNumber(tx.number_moved); // Signed: +Buy, -Sell
-            const amount = Math.abs(rawAmount);
-            const cashFlow = amount * priceVal;
-            
-            const code = Parser.extractTxCode(tx.type); // e.g., "10"
-            const security = tx.security || "";
-            
-            // 2. Classify Action
-            if (rawAmount > 0) {
-                // --- ACQUISITION (获得) ---
-                
-                // Categorize by Code
-                if (code === CODES.PUBLIC_MARKET) {
-                    hasPublicBuy = true;
-                    buyVol += amount;
-                    buyCost += cashFlow;
-                } 
-                else if ([CODES.PRIVATE_MARKET, CODES.PROSPECTUS_EXEMPT].includes(code)) {
-                    hasPrivateBuy = true;
-                    buyVol += amount;
-                    buyCost += cashFlow;
-                }
-                else if (code === CODES.PLAN) {
-                    hasPlan = true;
-                    buyVol += amount;
-                    buyCost += cashFlow;
-                }
-                else if ([CODES.GRANT_OPTIONS, CODES.GRANT_WARRANTS, CODES.GRANT_RIGHTS].includes(code)) {
-                    hasGrant = true;
-                    // Grants usually have Price=0 or Strike Price (not cash paid now). 
-                    // We DO NOT add to buyCost because they didn't pay cash yet.
-                }
-                else if ([CODES.EXERCISE_OPTIONS, CODES.EXERCISE_WARRANTS, CODES.EXERCISE_RIGHTS, CODES.EXERCISE_CASH].includes(code)) {
-                    hasExercise = true;
-                    // If they exercised, they acquired shares.
-                    buyVol += amount;
-                    buyCost += cashFlow; // Assuming priceVal is the Exercise Price paid
-                }
 
-            } else if (rawAmount < 0) {
-                // --- DISPOSITION (处置) ---
-                
-                if (code === CODES.PUBLIC_MARKET) {
-                    hasPublicSell = true;
-                    sellVol += amount;
-                    sellProceeds += cashFlow;
-                }
-                else if ([CODES.PRIVATE_MARKET, CODES.PROSPECTUS_EXEMPT].includes(code)) {
-                    sellVol += amount;
-                    sellProceeds += cashFlow;
-                }
-                // Check if this is an "Exercise" event (Source side: Option count decreases)
-                else if ([CODES.EXERCISE_OPTIONS, CODES.EXERCISE_WARRANTS, CODES.EXERCISE_RIGHTS].includes(code)) {
-                    // This is just the derivative disappearing. Not a "Sell" of equity.
-                    // Ignore for net equity calculation, but note the event.
+            const cash = absAmount * price * currencyMultiplier;
+
+            if (amount > 0) {
+                // --- ACQUISITION ---
+                if (code === CONFIG.CODES.PUBLIC_BUY) {
+                    hasPublicBuy = true;
+                    buyVol += absAmount;
+                    buyCost += cash;
+                } else if (CONFIG.CODES.PRIVATE_BUY.includes(code)) {
+                    hasPrivateBuy = true;
+                    buyVol += absAmount;
+                    buyCost += cash;
+                } else if (CONFIG.CODES.PLAN_BUY.includes(code)) {
+                    // [NEW] Plan Buy 计入资金，但标记不同
+                    hasPlanBuy = true;
+                    buyVol += absAmount;
+                    buyCost += cash;
+                } else if (CONFIG.CODES.EXERCISE.includes(code)) {
                     hasExercise = true;
+                    buyVol += absAmount;
+                    buyCost += cash; 
                 }
-                else {
-                    // Other sells (Plan sell, Gift, etc.)
-                    sellVol += amount;
-                    sellProceeds += cashFlow;
+            } else {
+                // --- DISPOSITION ---
+                if (code === CONFIG.CODES.PUBLIC_BUY) { 
+                    hasSell = true;
+                    sellVol += absAmount;
+                    sellProceeds += cash;
                 }
             }
         });
 
-        const netCashInvested = buyCost - sellProceeds;
-
-        // --- B. Scoring Engine ---
-        let score = 0;
-
-        // 1. Positive Drivers (加分项)
-        if (hasPublicBuy) {
-            score += 50; // 公开市场买入：最强信号
-            summary.reasons.push("🔥 Market Buy (Code 10)");
-        }
-        else if (hasPrivateBuy) {
-            score += 20; // 私募：中等信号 (有锁定期)
-            summary.reasons.push("🔒 Private Placement (Code 11/16)");
-        }
-        else if (hasPlan && !hasGrant) {
-            score += 10; // 自动计划：低信号
-            summary.reasons.push("📅 Purchase Plan (Code 30)");
-        }
-
-        // 2. Negative/Trap Drivers (减分/过滤项)
+        const netCash = buyCost - sellProceeds;
         
-        // Trap: Option Flip (Exercise + Sell)
-        // 既有行权 (获得股票) 又有卖出 (抛售股票)
-        if (hasExercise && (hasPublicSell || sellVol > 0)) {
-            summary.reasons.push("⛔ Option Flip (Exercised & Sold)");
-            score = -10; // 这是一个套利行为，不是看涨
+        const sediUrl = meta.issuer_number 
+            ? `https://ceo.ca/content/sedi/issuers/${meta.issuer_number}`
+            : null;
+
+        // Anomaly Check
+        if (Math.abs(netCash) > CONFIG.THRESHOLDS.ANOMALY_CAP) {
+            return {
+                ticker, insider: insiderName, score: 0, relation: meta.relationship_type,
+                reasons: ["⚠️ Data Anomaly"], netCashInvested: netCash, isRiskAlert: true, 
+                isWatchlisted, sediUrl, tags: []
+            };
         }
 
-        // Trap: Grant Only (Compensation)
-        // 只有 Grant，没有真金白银投入
-        if (hasGrant && buyCost === 0 && !hasPublicBuy) {
-            summary.reasons.push("🎁 Compensation Grant (No Cash)");
-            score = 0;
+        // --- Scoring ---
+        let score = 0;
+        const reasons = [];
+
+        // A. Base Score
+        if (hasPublicBuy) {
+            score += CONFIG.SCORING.BASE_MARKET_BUY;
+            reasons.push("🔥 Market Buy");
+        } else if (hasPrivateBuy) {
+            score += CONFIG.SCORING.BASE_PRIVATE_BUY;
+            reasons.push("🔒 Private Placement");
+        } else if (hasPlanBuy) {
+            score += CONFIG.SCORING.BASE_PLAN_BUY; // 较低的分数 (10分)
+            reasons.push("📅 Auto-Plan Buy");
+        } else if (hasExercise) {
+            score += CONFIG.SCORING.BASE_EXERCISE;
+            reasons.push("🎫 Exercised Rights");
         }
 
-        // 3. Multipliers (乘数效应)
-        if (score > 0) {
-            // Insider Rank
-            if (summary.relation.includes('Senior Officer') || summary.relation.includes('Director')) {
-                score += 20;
-                summary.reasons.push("⭐ Top Insider");
+        // B. Negative filtering
+        if (hasExercise && hasSell) {
+            return {
+                ticker, insider: insiderName, score: 0, relation: meta.relationship_type,
+                reasons: ["⛔ Option Flip"], netCashInvested: netCash, 
+                isWatchlisted, sediUrl, tags: []
+            };
+        }
+
+        // C. Bonuses
+        const isTopInsider = meta.relationship_type && (meta.relationship_type.includes('Director') || meta.relationship_type.includes('Senior Officer'));
+        if (isTopInsider && score > 0) {
+            score += CONFIG.SCORING.RANK_BONUS;
+            reasons.push("⭐ Top Insider");
+        }
+
+        if (netCash > CONFIG.THRESHOLDS.LARGE_SIZE) {
+            score += CONFIG.SCORING.SIZE_BONUS;
+            reasons.push("💰 Large Size");
+        }
+
+        if (buyVol > 0 && score > 0) {
+            const netVol = buyVol - sellVol;
+            const initialHoldings = finalBalance - netVol;
+            let pctIncrease = 0;
+            
+            if (initialHoldings <= 0) {
+                 if (netVol > 0) {
+                    reasons.push("🆕 New Position");
+                    score += 10; 
+                 }
+            } else {
+                pctIncrease = netVol / initialHoldings;
             }
-            // Size Threshold (Dynamic)
-            if (netCashInvested > 50000) {
-                score += 20;
-                summary.reasons.push("💰 Large Size (>50k)");
-                summary.isSignificant = true;
+
+            if (pctIncrease > CONFIG.THRESHOLDS.HIGH_CONVICTION_PCT) {
+                score += CONFIG.SCORING.CONVICTION_BONUS;
+                reasons.push(`🚀 +${(pctIncrease*100).toFixed(0)}% Holdings`);
             }
         }
 
-        // --- C. Watchlist Logic ---
-        if (isWatchlisted) {
-            if (hasPublicSell) {
-                summary.isRiskAlert = true;
-                summary.reasons.push("🚨 ALERT: Market Sell on Watchlist");
-            }
-            if (hasExercise && !hasPublicSell) {
-                summary.reasons.push("ℹ️ Info: Exercised Options (Hold)");
+        // D. Filing Lag
+        const fileDateStr = (meta.filing_date && meta.filing_date.length > 10) ? meta.filing_date.substring(0, 10) : meta.filing_date;
+        if (fileDateStr) {
+            const diffDays = Math.ceil(Math.abs(new Date(fileDateStr) - new Date(meta.transaction_date)) / (86400000)); 
+            if (diffDays > CONFIG.THRESHOLDS.LATE_FILING_DAYS && score > 0) {
+                score += CONFIG.SCORING.LATE_FILING_BONUS;
+                reasons.push(`🐢 ${diffDays}d Late`);
             }
         }
 
-        // Result Construction
         return {
-            ...summary,
+            ticker,
+            insider: insiderName,
+            relation: meta.relationship_type,
             score,
-            netCashInvested,
-            netVol: buyVol - sellVol
+            netCashInvested: netCash,
+            reasons,
+            isWatchlisted, 
+            sediUrl,       
+            tags: []
         };
     }
 }

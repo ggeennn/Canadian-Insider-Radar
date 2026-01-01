@@ -3,54 +3,61 @@
 ## 1. 项目概览 (Project Overview)
 - **项目名称:** SEDI Insider Tracker (MVP)
 - **核心目标:** 自动化捕捉加拿大微型市值 (Micro-cap) 公司的内部人高置信度买入信号 (High-Conviction Insider Buying)。
-- **当前阶段:** **Phase 3: Logic Construction & Persistence.** - 已完成: 全链路数据摄取 (Ingestion Pipeline) —— 包含自动登录、反爬绕过、数据清洗与存储。
-    - 进行中: 评分算法实现 (`analyzer.js`)。
+- **当前阶段:** **Phase 4: System Integration & Hardening.** - 已完成: 核心微服务（Monitor, Fetcher, Analyzer）的编排与集成。实现了**限流队列**与**原始数据存储**。
+    - 下一步: 长期运行稳定性测试 (Long-running Test) 与 部署 (Deployment)。
 
 ## 2. 技术栈 (Tech Stack)
 - **Runtime:** Node.js (ES Modules).
-- **Scout (Monitor):** **Playwright** (Headless/Headed) - 负责实时监控与**自动会话维护 (Auto-Login)**。
-- **Fetcher (Data):** **Playwright (Stealth Mode)** - *取代 Axios*。利用全浏览器导航 (`page.goto`) 与 `navigator.webdriver` 屏蔽技术，绕过 Cloudflare 403 拦截。
-- **Storage:** **JSONL** (Append-only) - 本地文件存储，通过 ID 去重。
-- **Auth Strategy:** **Cookie Bridging** (Monitor 生成 Cookie -> JSON 文件 -> Fetcher 注入 Cookie)。
+- **Orchestrator:** **Index.js (Producer-Consumer)** - 基于内存队列的任务调度器，负责流量控制。
+- **Scout (Monitor):** **Playwright** - 负责实时信号发现 (Producer)。
+- **Fetcher (Data):** **Playwright (Stealth)** - 负责隐身数据获取 (Consumer)。
+- **Storage:** **JSONL (ELT)** - 存储全量原始数据 (Raw Data)，支持 Schema-on-Read。
+- **Logging:** Dual Logging (Console + File Rotation).
 
 ### 2.1 关键技术决策 (Key Decisions)
-- **Stealth Navigation over HTTP Client:**
-    - 尝试使用 Axios 失败 (403 Forbidden)，因 Cloudflare 识别 Node.js TLS 指纹。
-    - **决策:** 升级为 "Nuclear Option"。让 Fetcher 模拟真实用户打开 API URL，并注入 `--disable-blink-features=AutomationControlled` 参数彻底隐身。
-- **Decoupled Session Management:**
-    - **决策:** 将“身份维持”职责完全交给 Monitor。Monitor 负责通过 UI 登录并刷新 `cookies.json`。Fetcher 仅负责读取凭证，实现职责分离。
-- **Storage Format:**
-    - **决策:** 选用 `.jsonl` (JSON Lines)。避免 JSON 数组读写时的全量解析开销，支持高频追加写入，且容错性强。
+- **Producer-Consumer Architecture:**
+    - **决策:** Monitor (快) 与 Fetcher (慢/敏感) 解耦。Monitor 只负责推入 Queue，Index 负责按随机间隔 (Jitter) 消费。
+    - **理由:** 防止突发流量导致 API 封禁，平滑请求曲线。
+- **ELT over ETL (Raw Data Preservation):**
+    - **决策:** 存储 API 返回的完整 `raw` JSON 对象，而非清洗后的字段。
+    - **理由:** 金融分析逻辑 (Analyzer) 会频繁迭代。保留原始数据允许我们随时回溯历史数据进行新逻辑的验证 (Backtesting)，无需重新抓取。
+- **Recursive Timeout vs SetInterval:**
+    - **决策:** 使用递归的 `setTimeout` 配合随机抖动 (5-15s)。
+    - **理由:** 确保上一次任务完全结束后才开始下一次倒计时，彻底消除并发冲突风险，模拟真人操作频率。
 
-## 3. 待解决的核心问题 (Critical Issues - HIGH PRIORITY)
-1.  **Signal Logic:** 实现 `analyzer.js`，特别是处理 `Price: 0` 的边缘情况（Fallback 机制）。
-2.  **Session Expiry:** 需观察 `cookies.json` 的有效期。如果 Session 过期，Monitor 需要有能力检测并重新登录 (目前实现了启动时检查)。
-3.  **Long-running Stability:** 在无人值守情况下，确保 Monitor 不会因内存泄漏或意外弹窗崩溃。
+## 3. 待解决的核心问题 (Critical Issues)
+1.  **Deployment:** 需要部署到服务器 (VPS/Raspberry Pi) 进行 24/7 运行测试。
+2.  **Notification:** 目前仅有日志输出，需接入 Telegram/Email/Discord 推送模块。
+3.  **Error Recovery:** 观察长时间运行后 Monitor 的内存占用及 Session 过期后的自动恢复能力。
 
 ## 4. 项目结构快照 (Project Structure)
 root/
 ├── package.json
-├── .env                # Config: CEO_EMAIL, CEO_PASSWORD
-├── cookies.json        # [Auto-Gen] Stores valid session cookies
-├── monitor_state.json  # [Auto-Gen] Watermark for deduplication
+├── .env                  # Config: Credentials
+├── config/
+│   └── watchlist.json    # User Watchlist
+├── logs/                 # [Auto-Gen] Daily execution logs
+├── state/                # [Auto-Gen] Runtime state (Cookies, Watermarks)
+│   ├── cookies.json
+│   └── monitor_state.json
 ├── data/
-│   └── transactions_history.jsonl # [Auto-Gen] Persistent database
+│   └── transactions_history.jsonl # [Auto-Gen] Database (Raw ELT)
 ├── src/
+│   ├── index.js          # The Commander (Entry Point)
 │   ├── monitors/
-│   │   └── sedi_monitor.js  # v3.2: Auto-Login, React-Aware, Non-blocking wait
+│   │   └── sedi_monitor.js  # v4.0: Callback-based Producer
 │   ├── services/
-│   │   ├── api_client.js    # v4.1: Stealth Mode Browser Fetcher
-│   │   └── storage.js       # JSONL Append Service with ID Dedup
+│   │   ├── api_client.js    # v5.0: Raw Data Fetcher
+│   │   └── storage.js       # v2.1: Raw Data Persistence
 │   ├── utils/
-│   │   └── parser.js        # Helper: Clean currency/number strings
+│   │   └── parser.js
 │   └── core/
-│       └── analyzer.js      # (Pending) The "Brain": Scoring logic
-└── test_fetcher.js     # Integration Test Script
+│       └── analyzer.js      # v3.0: Schema-on-Read, Watchlist Logic
+└── test_*.js             # Unit Tests
 
 ## 5. 待办事项 (TODOs)
-- [x] **Step 1 (Scout):** Playwright Monitor 实时抓取 Ticker + 水位线去重。
-- [x] **Step 2 (Auth):** 实现 React 页面自动登录，获取会员级 Cookie。
-- [x] **Step 3 (Fetcher):** 攻克 Cloudflare 反爬，实现 API 数据获取。
-- [x] **Step 4 (Storage):** 实现 JSONL 存储与 ID 去重。
-- [ ] **Step 5 (Brain):** 实现 `analyzer.js` 评分逻辑 (Net Buy Calculation)。
-- [ ] **Step 6 (Reporter):** 格式化输出/通知模块。
+- [x] **Step 1-4:** Ingestion Pipeline (Scout, Auth, Fetch, Store).
+- [x] **Step 5 (Brain):** Analyzer v3.0 (Professional Codes & Watchlist).
+- [x] **Step 6 (Orchestrator):** `index.js` 集成，实现队列与限流。
+- [x] **Step 7 (Logging):** 本地文件日志系统。
+- [ ] **Step 8 (Reporter):** 实现 Telegram/Email 报警推送。

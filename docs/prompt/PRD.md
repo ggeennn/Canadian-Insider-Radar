@@ -20,21 +20,22 @@
       * 控制台输出高亮的高价值信号 (Score > Threshold)。
 
 **3. 技术架构 (Architecture)**
-  * **Frontend Monitor:** Playwright (Headed) - 负责 UI 触发与 Cookie 桥接。
-  * **Backend Client:** **Playwright (Stealth Context)** - *取代 Axios*。使用 Network Context 模拟真实用户行为，解决 403 Forbidden 问题。
-  * **Data Source:** CEO.ca (Tier-2 Authenticated API).
-  * **Storage:** Local JSONL File System.
+  * **The Commander (Orchestrator):** `src/index.js` - 单线程事件循环，维护 Task Queue。
+  * **Frontend Monitor (Producer):** Playwright - 实时监听 UI 变化，生产 Ticker 任务。
+  * **Backend Worker (Consumer):** Playwright (Stealth) - 消费 Ticker 任务，执行 API 调用。
+  * **Data Warehouse:** Local JSONL (Raw Data) - 采用 ELT 模式存储。
 
 **4. 数据流 (Data Pipeline)**
-1.  **Monitor:** Detects "$SUNN just filed..." -> Extract `SUNN`.
-2.  **Auth Bridge:** Reads `cookies.json` (Maintained by Monitor).
-3.  **Map:** Stealth Nav to `search_companies?query=SUNN` -> Get ID `55841`.
-4.  **Fetch:** Stealth Nav to `transactions?issuer_number=55841`.
-5.  **Store:** Dedup & Append to `transactions_history.jsonl`.
-6.  **Compute:** `analyzer.evaluate(transactions)` -> Returns Score.
-7.  **Action:** If Score > Threshold -> Alert.
+1.  **Signal:** Monitor 发现 "$SUNN just filed..." -> **Push to Queue**.
+2.  **Throttle:** Commander 等待随机时间 (Jitter 5-15s) -> **Pop from Queue**.
+3.  **Fetch:** Worker 读取 `cookies.json` -> 隐身访问 API 获取 Raw Data.
+4.  **Load:** 存入 `transactions_history.jsonl` (包含完整 JSON 及其元数据).
+5.  **Transform & Analyze:** `analyzer.js` 动态读取 Raw Data -> 应用最新评分逻辑.
+6.  **Action:** Score > Threshold 或 Watchlist 异动 -> 写入 `logs/` 并打印报警.
 
 **5. 核心逻辑参数**
-- **Window Period:** T+0 (只关注当天的净操作)。
-- **Min Value Threshold:** $5,000 CAD (暂定 MVP 门槛)。
-- **Insider Role Weight:** CEO/CFO > Director > 10% Holder.
+- **Safety Interval:** 5s - 15s (Randomized).
+- **Analyzer Logic:**
+    - **Strong Buy:** Public Market Buy (Code 10) + Positive Net Cash.
+    - **Noise:** Grants (Code 50s), Option Flips.
+    - **Watchlist:** Alert on ANY Sell (Code 10 Disposition).
