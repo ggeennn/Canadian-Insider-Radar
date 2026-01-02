@@ -1,4 +1,4 @@
-import { Analyzer } from './src/core/analyzer.js';
+import { Analyzer } from '../src/core/analyzer.js';
 
 // Mock Data adapted for v3.0 logic
 const mockRawRecords = [

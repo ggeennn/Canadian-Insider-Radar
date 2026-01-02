@@ -3,8 +3,8 @@
  * * Goal: Test the full pipeline: API -> Clean -> Store.
  */
 
-import { ApiService } from './src/services/api_client.js';
-import { StorageService } from './src/services/storage.js';
+import { ApiService } from '../src/services/api_client.js';
+import { StorageService } from '../src/services/storage.js';
 
 async function runTest() {
     console.log("🧪 Starting Data Ingestion Test...");

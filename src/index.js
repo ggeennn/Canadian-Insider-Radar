@@ -86,7 +86,7 @@ async function runWorkerLoop() {
                     const savedCount = StorageService.save(records);
                     Logger.info(`   💾 Saved ${savedCount} new records.`);
 
-                    const signals = Analyzer.analyze(records, watchlist);
+                    const signals = await Analyzer.analyze(records, watchlist);
                     
                     if (signals.length > 0) {
                         const isHit = signals.some(s => s.isWatchlisted);
@@ -96,12 +96,20 @@ async function runWorkerLoop() {
                             Logger.info(`🔔 ANALYSIS RESULT for ${ticker}:`);
                         }
 
+                        // [NEW] 打印市场背景信息 (如果有)
+                        // 取第一个信号的 marketContext 即可，因为同个 Ticker 是一样的
+                        const mContext = signals[0].marketContext;
+                        if (mContext) {
+                            Logger.info(`   📊 Market: Price $${mContext.price} | Cap $${(mContext.marketCap/1000000).toFixed(1)}M | Vol ${mContext.volume} | AvgVol ${mContext.avgVolume}`);
+                        }
+
                         signals.forEach(sig => {
                             const prefix = sig.isWatchlisted ? "🎯 " : "";
                             const icon = sig.score > 50 ? "🔥🔥" : (sig.isRiskAlert ? "🚨" : "ℹ️");
                             
                             Logger.info(`${prefix}${icon} ${sig.insider} (${sig.relation})`);
                             Logger.info(`   Score: ${sig.score} | Net: $${Math.round(sig.netCashInvested).toLocaleString()}`);
+                            // Reasons 现在包含了超级详细的 (Cost vs Market) 等信息
                             Logger.info(`   Reasons: ${sig.reasons.join(', ')}`);
                             
                             if (sig.sediUrl) {
