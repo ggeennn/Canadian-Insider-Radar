@@ -1,16 +1,22 @@
 /**
- * src/index.js (v2.1 - Enhanced Logging & Watchlist Support)
+ * src/index.js
+ * [Fix] Resolved ReferenceError: tickerSignals is not defined.
+ * [Feature] Integrated AI Report display & Ticker Grouping.
  */
 
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
 import { startMonitor } from './monitors/sedi_monitor.js';
-import { ApiService } from './services/api_client.js';
+import { ApiService } from './services/api_client.js'; 
 import { StorageService } from './services/storage.js';
 import { Analyzer } from './core/analyzer.js';
 
-const WATCHLIST_FILE = 'config/watchlist.json';
-const LOG_DIR = 'logs';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const WATCHLIST_FILE = path.join(__dirname, './config/watchlist.json'); 
+const LOG_DIR = path.join(__dirname, '../logs');
 
 const MIN_DELAY = 5000;  
 const MAX_DELAY = 15000; 
@@ -78,46 +84,73 @@ async function runWorkerLoop() {
             
             if (issuerId) {
                 const records = await ApiService.getTransactions(issuerId);
-                
-                // 这里现在会明确显示获取了多少条记录，帮助判断 API 是否正常
                 Logger.info(`   📥 Fetched ${records.length} records.`); 
                 
                 if (records.length > 0) {
                     const savedCount = StorageService.save(records);
                     Logger.info(`   💾 Saved ${savedCount} new records.`);
 
+                    // 分析 (支持 AI)
                     const signals = await Analyzer.analyze(records, watchlist);
                     
                     if (signals.length > 0) {
+                        
+                        // 1. 头部信息
                         const isHit = signals.some(s => s.isWatchlisted);
                         if (isHit) {
                             Logger.info(`\n👀 ============ [WATCHLIST ALERT: ${ticker}] ============ 👀`);
                         } else {
-                            Logger.info(`🔔 ANALYSIS RESULT for ${ticker}:`);
+                            Logger.info(`\n🔔 ANALYSIS RESULT for ${ticker}:`);
                         }
 
-                        // [NEW] 打印市场背景信息 (如果有)
-                        // 取第一个信号的 marketContext 即可，因为同个 Ticker 是一样的
-                        const mContext = signals[0].marketContext;
+                        // 2. 市场背景 (取第一个信号的即可)
+                        const firstSig = signals[0];
+                        const mContext = firstSig.marketContext;
                         if (mContext) {
-                            Logger.info(`   📊 Market: Price $${mContext.price} | Cap $${(mContext.marketCap/1000000).toFixed(1)}M | Vol ${mContext.volume} | AvgVol ${mContext.avgVolume}`);
+                            Logger.info(`   📊 Market: Price $${mContext.price} | Cap $${(mContext.marketCap/1000000).toFixed(1)}M | AvgVol ${mContext.avgVolume}`);
                         }
 
+                        // 3. AI 报告 (检查是否有 AI 分析结果)
+                        // [FIXED] 将 tickerSignals 改为 signals
+                        const signalWithAI = signals.find(s => s.aiAnalysis);
+                        
+                        if (signalWithAI) {
+                            // 优先打印新闻源
+                            if (signalWithAI.aiNews && signalWithAI.aiNews.length > 0) {
+                                Logger.info(`   📰 News Context (${signalWithAI.aiNews.length} articles):`);
+                                signalWithAI.aiNews.forEach(n => {
+                                    Logger.info(`      - [${n.time}] ${n.title}`);
+                                });
+                            } else if (signalWithAI.score >= 100) {
+                                Logger.info(`   📭 News Context: No relevant articles found.`);
+                            }
+
+                            // 打印 AI 分析
+                            if (signalWithAI.aiAnalysis) {
+                                Logger.info(`   🧠 [AI REPORT]:`);
+                                signalWithAI.aiAnalysis.split('\n').forEach(line => {
+                                    if(line.trim()) Logger.info(`      ${line}`);
+                                });
+                                Logger.info(`   --------------------------------------------------`);
+                            }
+                        }
+
+                        // 4. 内部人交易列表
                         signals.forEach(sig => {
                             const prefix = sig.isWatchlisted ? "🎯 " : "";
                             const icon = sig.score > 50 ? "🔥🔥" : (sig.isRiskAlert ? "🚨" : "ℹ️");
                             
-                            Logger.info(`${prefix}${icon} ${sig.insider} (${sig.relation})`);
-                            Logger.info(`   Score: ${sig.score} | Net: $${Math.round(sig.netCashInvested).toLocaleString()}`);
-                            // Reasons 现在包含了超级详细的 (Cost vs Market) 等信息
-                            Logger.info(`   Reasons: ${sig.reasons.join(', ')}`);
+                            Logger.info(`   ${prefix}${icon} ${sig.insider} (${sig.relation})`);
+                            Logger.info(`      Score: ${sig.score} | Net: $${Math.round(sig.netCashInvested).toLocaleString()}`);
+                            Logger.info(`      Reasons: ${sig.reasons.join(', ')}`);
                             
                             if (sig.sediUrl) {
-                                Logger.info(`   🔗 Source: ${sig.sediUrl}`);
+                                Logger.info(`      🔗 Link: ${sig.sediUrl}`);
                             }
-                            
-                            if (isHit) Logger.info(`   --------------------------------------------------`);
                         });
+
+                        if (isHit) Logger.info(`   --------------------------------------------------`);
+                        
                     } else {
                         Logger.info(`   💤 No significant signals found.`);
                     }
