@@ -14,17 +14,17 @@ It employs a **Hybrid Ingestion Architecture** (Playwright for triggers + Axios 
 
 ```mermaid
 graph TD;
-    A[SEDI Monitor\n(Playwright/Event Loop)] -->|Real-time Trigger| B(Task Queue);
+    A["SEDI Monitor<br>(Playwright/Event Loop)"] -->|Real-time Trigger| B(Task Queue);
     B --> C{Hybrid Fetcher};
-    C -->|Raw Data| D[ELT Data Warehouse\n(JSONL)];
-    C -->|Market Context| E[Yahoo Finance API\n(Smart Suffix Adapter)];
-    C -->|Deep News Content| F[Deep Scraper\n(Axios + Cheerio)];
+    C -->|Raw Data| D["ELT Data Warehouse<br>(JSONL)"];
+    C -->|Market Context| E["Yahoo Finance API<br>(Smart Suffix Adapter)"];
+    C -->|Deep News Content| F["Deep Scraper<br>(Axios + Cheerio)"];
     
     D & E & F --> G[Analyzer Engine v9.3];
     
     G -->|Logic: Quant Scoring| H{Signal Filter};
     H -->|Low Score| I[Discard / Log];
-    H -->|High Score| J[LLM Service\n(Gemini 1.5 Flash)];
+    H -->|High Score| J["LLM Service<br>"];
     
     J -->|RAG: News + Data| K[Final Alpha Report];
 
