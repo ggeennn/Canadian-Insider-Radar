@@ -26,7 +26,7 @@ function loadCookies() {
 export const ApiService = {
     async _browserFetch(url) {
         const browser = await chromium.launch({ 
-            headless: false, // 保持 false 以便调试 Cloudflare
+            headless: false, 
             args: ['--disable-blink-features=AutomationControlled', '--no-sandbox', '--disable-setuid-sandbox']
         }); 
         
@@ -36,7 +36,6 @@ export const ApiService = {
                 viewport: { width: 1280, height: 720 }
             });
             
-            // 屏蔽自动化特征
             await context.addInitScript(() => {
                 Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
             });
@@ -46,7 +45,6 @@ export const ApiService = {
 
             const page = await context.newPage();
             
-            // 增加超时设置 (30秒)
             const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
             
             // Cloudflare Check
@@ -56,12 +54,10 @@ export const ApiService = {
                  await page.waitForTimeout(5000); 
             }
 
-            // 尝试解析
             const finalContent = await page.innerText('body');
             try {
                 return JSON.parse(finalContent);
             } catch (e) {
-                // 关键调试信息：如果这里失败，打印一部分返回内容看看是什么
                 console.error(`❌ JSON Parse Error. Content preview: ${finalContent.substring(0, 100)}...`);
                 throw new Error("Invalid JSON Response");
             }
@@ -108,13 +104,11 @@ export const ApiService = {
 
             const rawTxs = data.transactions;
 
-            // [CRITICAL FILTER] 过滤掉状态为 'D' (Deleted) 或 'O' (Original) 的记录
             const validTxs = rawTxs.filter(tx => {
                 const state = tx.state ? tx.state.toUpperCase() : '';
                 return !['D', 'O'].includes(state);
             });
 
-            // 如果过滤后变少了，打印一下以供确认
             if (validTxs.length < rawTxs.length) {
                 console.log(`ℹ️ Filtered ${rawTxs.length - validTxs.length} duplicate/deleted records.`);
             }
@@ -127,7 +121,6 @@ export const ApiService = {
             }));
 
         } catch (error) {
-            // 这里现在会打印出具体的错误，而不是静默失败
             console.error(`❌ API Error (getTransactions): ${error.message}`);
             return [];
         }

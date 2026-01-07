@@ -1,8 +1,16 @@
 /**
  * src/services/news/news_service.js
- * [Optimized] Dual-Search (Ticker + Company Name) & Strict Relevance Filter.
+ * [Updated] Returns 'isDeep' flag and preserves 'link' for auditing.
  */
 import YahooFinance from 'yahoo-finance2';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
+
+const USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0"
+];
 
 export class NewsService {
     constructor() {
@@ -13,126 +21,125 @@ export class NewsService {
         this.yf = new YFClass();
     }
 
-    /**
-     * 获取经过严格筛选的相关新闻
-     * @param {string} ticker - e.g. "RVG.V"
-     * @param {string} companyName - e.g. "Anfield Energy Inc."
-     */
     async getRecentNews(ticker, companyName) {
         try {
-            const queries = [];
-            
-            // 1. 构建 Ticker 搜索词
-            // 优先用带后缀的 (精准)，如果输入不带后缀，尝试补齐
-            const cleanTicker = ticker.replace('$', '').trim();
-            if (cleanTicker.includes('.')) {
-                queries.push(cleanTicker);
-            } else {
-                queries.push(`${cleanTicker}.V`);
-                queries.push(`${cleanTicker}.TO`);
-                queries.push(`${cleanTicker}.CN`);
-            }
-
-            // 2. 构建公司名搜索词 (清洗后缀)
-            // "Anfield Energy Inc." -> "Anfield Energy"
-            // 搜索全名能大幅提高召回率，防止漏掉没有提及代码的新闻
-            let cleanName = "";
-            if (companyName) {
-                cleanName = companyName
-                    .replace(/ inc\.?$/i, '')
-                    .replace(/ ltd\.?$/i, '')
-                    .replace(/ corp\.?$/i, '')
-                    .replace(/ corporation$/i, '')
-                    .replace(/ limited$/i, '')
-                    .trim();
-                
-                if (cleanName.length > 3) { // 防止名字太短搜出垃圾
-                    queries.push(cleanName);
-                }
-            }
-
-            // 3. 执行并行搜索 (去重)
-            const uniqueQueries = [...new Set(queries)];
-            // console.log(`   🕵️ Searching news for: ${uniqueQueries.join(', ')}...`);
-            
-            const searchPromises = uniqueQueries.map(q => this._fetchFromYahoo(q));
+            const queries = this._buildQueries(ticker, companyName);
+            const searchPromises = queries.map(q => this._fetchFromYahooSearch(q));
             const results = await Promise.all(searchPromises);
             
-            // 4. 合并结果并去重 (基于 Link)
             const allNews = results.flat();
-            const seenLinks = new Set();
             const uniqueNews = [];
+            const seenLinks = new Set();
 
             for (const item of allNews) {
-                if (!seenLinks.has(item.link)) {
+                if (item && !seenLinks.has(item.link)) {
                     seenLinks.add(item.link);
                     uniqueNews.push(item);
                 }
             }
 
-            // 5. [关键步骤] 严格相关性校验 (Relevance Filter)
-            // 只有当 Title 或 Summary 包含 Ticker 或 CompanyName 时才保留
-            // 这彻底杜绝了 Yahoo 返回 "Top Stories" 这种无关新闻
             const relevantNews = uniqueNews.filter(n => 
-                this._isRelevant(n, cleanTicker, cleanName)
+                this._isRelevant(n, ticker, companyName)
             );
 
-            return relevantNews;
+            const deepNewsPromises = relevantNews.slice(0, 3).map(async (article) => {
+                const fullText = await this._fetchArticleContent(article.link);
+                
+                const isDeep = (fullText && fullText.length > 50);
+                
+                return { 
+                   ...article, 
+                    content: isDeep ? fullText : article.summary,
+                    isDeep: isDeep 
+                };
+            });
+
+            return await Promise.all(deepNewsPromises);
 
         } catch (error) {
-            console.warn(`⚠️ News fetch failed for ${ticker}: ${error.message}`);
+            console.warn(`⚠️ News service error for ${ticker}: ${error.message}`);
             return [];
         }
     }
 
-    // 内部抓取函数
-    async _fetchFromYahoo(query) {
+    _buildQueries(ticker, companyName) {
+        const queries = [];
+        const cleanTicker = ticker.replace('$', '').trim();
+        if (cleanTicker.includes('.')) queries.push(cleanTicker);
+        else {
+            queries.push(`${cleanTicker}.V`); 
+            queries.push(`${cleanTicker}.TO`);
+            queries.push(`${cleanTicker}.CN`);
+        }
+        if (companyName) {
+            const cleanName = companyName.replace(/ (inc|ltd|corp|corporation|limited)\.?$/i, '').trim();
+            if (cleanName.length > 3) queries.push(cleanName);
+        }
+        return queries; 
+    }
+
+    async _fetchFromYahooSearch(query) {
         try {
             const result = await this.yf.search(query, { newsCount: 5 });
-            if (!result || !result.news || result.news.length === 0) return [];
-
+            if (!result || !result.news) return [];
             const now = Date.now();
-            const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
-
+            const twoWeeksMs = 14 * 86400 * 1000;
             return result.news.map(item => {
                 let pubTime = item.providerPublishTime;
-                if (pubTime && pubTime < 10000000000) pubTime *= 1000; // 秒转毫秒
-
-                // 简单的初步时间过滤
+                if (pubTime && pubTime < 10000000000) pubTime *= 1000;
                 if (pubTime && (now - pubTime) > twoWeeksMs) return null;
-
                 return {
                     title: item.title,
                     link: item.link,
-                    summary: item.summary || "", // Yahoo 搜索通常会返回 snippet
+                    summary: item.summary || "", 
                     time: pubTime ? new Date(pubTime).toISOString().split('T')[0] : 'N/A',
                     publisher: item.publisher
                 };
-            }).filter(item => item !== null); // 过滤掉超时的
-        } catch (e) {
-            return [];
+            }).filter(Boolean);
+        } catch (e) { return []; }
+    }
+
+    async _fetchArticleContent(url) {
+        if (url.includes('finance.yahoo.com/m/') || url.includes('/video/')) return null;
+
+        try {
+            const agent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+            const { data } = await axios.get(url, {
+                headers: { 
+                    'User-Agent': agent,
+                    'Accept': 'text/html,application/xhtml+xml',
+                },
+                timeout: 6000,
+                maxRedirects: 5
+            });
+
+            const $ = cheerio.load(data);
+            let text = "";
+
+            text = $('div[data-testid="article-body"]').text();
+            if (!text || text.length < 50) text = $('.caas-body').text();
+            if (!text || text.length < 50) text = $('div[class*="body"]').text();
+            if (!text || text.length < 50) text = $('article').text();
+            if (!text || text.length < 50) text = $('p').map((i, el) => $(el).text()).get().join(' ');
+
+            const cleanText = text.replace(/\s+/g, ' ').replace(/Advertisement/gi, '').trim();
+            return cleanText.substring(0, 1500) + (cleanText.length > 1500 ? "..." : "");
+        } catch (error) {
+            return null;
         }
     }
 
-    // [核心] 相关性校验逻辑
     _isRelevant(newsItem, tickerRoot, companyName) {
         const text = (newsItem.title + " " + newsItem.summary).toLowerCase();
-        
-        // 1. 检查 Ticker (使用词边界，防止 "GO" 匹配 "Google")
-        // 如果 ticker 比较长(>3)，直接匹配；如果短，加词边界
-        if (tickerRoot.length > 3) {
-            if (text.includes(tickerRoot.toLowerCase())) return true;
-        } else {
-             // 简单的词边界模拟，或者直接匹配 Ticker.V
-             if (text.includes(tickerRoot.toLowerCase())) return true;
+        const t = tickerRoot.replace('$', '').toLowerCase().split('.')[0];
+        try {
+            const regex = new RegExp(`\\b${t}\\b`, 'i');
+            if (regex.test(text)) return true;
+        } catch (e) { if (text.includes(` ${t} `)) return true; }
+        if (companyName) {
+            const n = companyName.toLowerCase().replace(/ (inc|ltd|corp)\.?$/i, '').trim();
+            if (n.length > 3 && text.includes(n)) return true;
         }
-
-        // 2. 检查公司名 (这是最稳健的)
-        // 只要出现 "Anfield Energy" 这样独特的词组，基本就是相关新闻
-        if (companyName && companyName.length > 4) {
-            if (text.includes(companyName.toLowerCase())) return true;
-        }
-
-        return false; // 既没提到代码，也没提到公司名 -> 判定为 Yahoo 塞的通用新闻 -> 丢弃
+        return false;
     }
 }

@@ -1,4 +1,8 @@
 node_modules
 .env
 cookies.json
-docs
+docs/
+data/
+test/
+logs/
+state/

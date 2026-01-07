@@ -38,8 +38,7 @@ function saveState(timestamp) {
 }
 
 async function performLogin(page) {
-    // ... (保持原有的 performLogin 逻辑不变，代码太长省略，请保留你 v3.2 的代码) ...
-    // 务必保留 v3.2 中修复的 "Strict Mode Violation" 逻辑
+
     console.log("🔐 Starting Auth Sequence (Fast Mode)...");
     try {
         const loginBtn = page.getByRole('button', { name: 'Log In', exact: true }).first();
@@ -71,7 +70,6 @@ async function saveCookies(page) {
 
 let latestProcessedTimestamp = loadState();
 
-// [INTERFACE CHANGE] 增加 onSignal 回调
 export async function startMonitor(onSignal) {
     console.log("Starting SEDI Monitor v4.0 (Integrated)...");
     
@@ -89,7 +87,6 @@ export async function startMonitor(onSignal) {
 
         console.log("👀 Monitor loop starting...");
         
-        // 传递回调函数给 scan
         await scanForNewFilings(page, onSignal); 
         
         setInterval(async () => {
@@ -101,10 +98,8 @@ export async function startMonitor(onSignal) {
     }
 }
 
-// [INTERFACE CHANGE] 接收 onSignal
 async function scanForNewFilings(page, onSignal) {
     try {
-        // ... (保持原有的 evaluate 抓取逻辑不变) ...
         const rawData = await page.evaluate(() => {
             const rows = Array.from(document.querySelectorAll('div[class*="Spiel_row"]'));
             return rows.map(row => {
@@ -124,7 +119,6 @@ async function scanForNewFilings(page, onSignal) {
                 const dateStr = new Date(data.timestamp).toLocaleString();
                 console.log(`[${dateStr}] 🚨 NEW SIGNAL: ${data.ticker}`);
                 
-                // [INTEGRATION] 将发现的 Ticker 传给主程序
                 if (onSignal && typeof onSignal === 'function') {
                     onSignal(data.ticker);
                 }

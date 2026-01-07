@@ -7,26 +7,26 @@
 
 export const Parser = {
     /**
-     * 清洗带符号和逗号的数字字符串
+     * Cleans number strings with symbols and commas
      * @param {string} str - e.g. "+239,491" or "-5,000" or ""
      * @returns {number}
      */
     cleanNumber(str) {
         if (!str || typeof str !== 'string') return 0;
         
-        // 1. 移除逗号 "," 和 "$"
-        // 2. 移除所有空格
+        // 1. Remove commas "," and "$"
+        // 2. Remove all spaces
         const cleanStr = str.replace(/[,$\s]/g, '');
         
-        // 3. 转换为浮点数
+        // 3. Convert to float
         const num = parseFloat(cleanStr);
         
-        // 4. 如果是非数字(NaN)，返回0
+        // 4. If not a number (NaN), return 0
         return isNaN(num) ? 0 : num;
     },
 
     /**
-     * 从 "Type" 字段提取交易代码
+     * Extracts transaction code from "Type" field
      * Input: "54 - Exercise of warrants"
      * Output: "54"
      */

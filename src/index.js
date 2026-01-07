@@ -90,12 +90,12 @@ async function runWorkerLoop() {
                     const savedCount = StorageService.save(records);
                     Logger.info(`   💾 Saved ${savedCount} new records.`);
 
-                    // 分析 (支持 AI)
+// Analyze (AI supported)
                     const signals = await Analyzer.analyze(records, watchlist);
                     
                     if (signals.length > 0) {
                         
-                        // 1. 头部信息
+// 1. Header Information
                         const isHit = signals.some(s => s.isWatchlisted);
                         if (isHit) {
                             Logger.info(`\n👀 ============ [WATCHLIST ALERT: ${ticker}] ============ 👀`);
@@ -103,19 +103,19 @@ async function runWorkerLoop() {
                             Logger.info(`\n🔔 ANALYSIS RESULT for ${ticker}:`);
                         }
 
-                        // 2. 市场背景 (取第一个信号的即可)
+// 2. Market Context (take the first signal)
                         const firstSig = signals[0];
                         const mContext = firstSig.marketContext;
                         if (mContext) {
                             Logger.info(`   📊 Market: Price $${mContext.price} | Cap $${(mContext.marketCap/1000000).toFixed(1)}M | AvgVol ${mContext.avgVolume}`);
                         }
 
-                        // 3. AI 报告 (检查是否有 AI 分析结果)
-                        // [FIXED] 将 tickerSignals 改为 signals
+// 3. AI Report (check for AI analysis results)
+// [FIXED] Changed tickerSignals to signals
                         const signalWithAI = signals.find(s => s.aiAnalysis);
                         
                         if (signalWithAI) {
-                            // 优先打印新闻源
+// Prioritize printing news source
                             if (signalWithAI.aiNews && signalWithAI.aiNews.length > 0) {
                                 Logger.info(`   📰 News Context (${signalWithAI.aiNews.length} articles):`);
                                 signalWithAI.aiNews.forEach(n => {
@@ -125,7 +125,7 @@ async function runWorkerLoop() {
                                 Logger.info(`   📭 News Context: No relevant articles found.`);
                             }
 
-                            // 打印 AI 分析
+// Print AI analysis
                             if (signalWithAI.aiAnalysis) {
                                 Logger.info(`   🧠 [AI REPORT]:`);
                                 signalWithAI.aiAnalysis.split('\n').forEach(line => {
@@ -135,7 +135,7 @@ async function runWorkerLoop() {
                             }
                         }
 
-                        // 4. 内部人交易列表
+// 4. Insider Transaction List
                         signals.forEach(sig => {
                             const prefix = sig.isWatchlisted ? "🎯 " : "";
                             const icon = sig.score > 50 ? "🔥🔥" : (sig.isRiskAlert ? "🚨" : "ℹ️");

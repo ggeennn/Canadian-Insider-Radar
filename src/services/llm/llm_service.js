@@ -1,35 +1,32 @@
 /**
  * src/services/llm/llm_service.js
- * [Update] Added defensive check for reasons array.
+ * [Fix] Now injects full article 'content' into the prompt.
+ * [Fix] Updated instructions to recognize deep content.
  */
 import OpenAI from 'openai';
-
-const LLM_CONFIG = {
-    baseURL: 'http://localhost:8000/openai/v1',
-    apiKey: 'sk969',
-    model: 'gemini-2.5-flash'
-};
+import dotenv from 'dotenv';
+dotenv.config();
 
 export class LLMService {
     constructor() {
         this.client = new OpenAI({
-            baseURL: LLM_CONFIG.baseURL,
-            apiKey: LLM_CONFIG.apiKey,
+            baseURL: process.env.LLM_BASE_URL,
+            apiKey: process.env.LLM_API,
         });
-        this.model = LLM_CONFIG.model;
+        this.model = process.env.LLM_MODEL;
     }
 
     async analyzeSentiment(context) {
         const { ticker, insiders, totalNetCash, maxScore, marketData, news } = context;
 
-        // 1. News
         const newsText = news && news.length > 0 
-            ? news.map(n => `- [${n.time}] ${n.title} ${n.summary ? `\n  (Summary: ${n.summary})` : ''}`).join('\n') 
+            ? news.map(n => {
+                const body = n.content ? `[CONTENT]: ${n.content}` : `[SUMMARY]: ${n.summary || 'N/A'}`;
+                return `### ARTICLE (${n.time})\nTITLE: ${n.title}\n${body}\n`;
+            }).join('\n') 
             : "No specific recent news found.";
 
-        // 2. Insiders Detail
         const insidersText = insiders.map(i => {
-            // [FIX] 增加 (i.reasons || []) 防御性检查，防止 undefined 报错
             const reasonList = i.reasons || [];
             const type = reasonList.includes('🔒 Private Placement') ? 'Private Placement' : 'Open Market';
             return `${i.name} ($${(i.amount/1000).toFixed(1)}k via ${type})`;
@@ -42,28 +39,30 @@ export class LLMService {
         const prompt = `
 You are a strict financial auditor. Analyze this insider activity for ${ticker}.
 
-DATA:
+DATA SNAPSHOT:
 - Market: ${mktInfo}
-- Total Insider Buy: $${totalNetCash.toLocaleString()} (Score: ${maxScore})
-- Details:
+- Total Insider Net Buy: $${totalNetCash.toLocaleString()} (Score: ${maxScore})
+- Insider Details:
 - ${insidersText}
 
-NEWS HEADLINES (Limit: Titles/Snippets only):
+NEWS CONTEXT:
 ${newsText}
 
 INSTRUCTIONS:
-1. **Source Warning**: Start with "⚠️ Analysis based on headlines/snippets only." if news is shallow.
-2. **Distinguish**: Differentiate between "Private Placement" (often discounted/warrants attached, lower conviction) vs "Open Market" (true skin in the game).
-3. **Brevity**: Use short sentences. No fluff. Max 3 bullet points per section.
+1. **Source Check**: If the news contains "[CONTENT]", you have deep context. If only "[SUMMARY]" or titles are present, start with "⚠️ Analysis based on headlines/snippets only."
+2. **Analysis**: Correlate the insider's buy timing with the news content. Is the news a catalyst?
+3. **Verdict**: Differentiate between "Private Placement" (Dilution risk) vs "Open Market" (Conviction).
 
 OUTPUT FORMAT:
-**⚠️ Data Level: [Headlines Only / No News / Deep]**
+**⚠️ Data Level: [Deep Read / Headlines Only / No News]**
 
 **🐂 BULL THESIS**
-- (Why is this good? Focus on value/growth)
+- Point 1
+- Point 2
 
 **🐻 BEAR RISKS**
-- (Dilution? Downtrend? Promotional news?)
+- Point 1
+- Point 2
 
 **⚖️ VERDICT**
 - [BULLISH / NEUTRAL / BEARISH] (One sentence summary)
@@ -74,7 +73,7 @@ OUTPUT FORMAT:
                 model: this.model,
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.3,
-                max_tokens: 8192
+                max_tokens: 8192 
             });
 
             return response.choices[0].message.content;

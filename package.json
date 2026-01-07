@@ -7,9 +7,10 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node src/index.js"
-  },
+    "test": "node --max-http-header-size=81920 test/test_news_deep.js",
+    "dev": "node --max-http-header-size=81920 src/index.js",
+    "start": "node --max-http-header-size=81920 src/index.js"
+},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ggeennn/SEDI_Insider_Tracker.git"
