@@ -1,6 +1,6 @@
 /**
- * src/core/analyzer.js (v9.3 - Audit Links)
- * [Feature] Adds clickable SEDI & News links to AI trigger logs for human verification.
+ * src/core/analyzer.js (v9.6 - Detail Capture)
+ * [Fix] Ignores Type 56 (Grants). Captures precise Date/Price details per insider.
  */
 import { Parser } from '../utils/parser.js';
 import { MarketContextFactory } from '../services/market_data/market_context_factory.js';
@@ -53,9 +53,9 @@ export class Analyzer {
         const firstRecord = records[0];
         const companyName = firstRecord.raw.issuer_name || firstRecord.raw.issuer || null;
         
+        // Extract Issuer Link
         const issuerNum = firstRecord.raw.issuer_number || firstRecord.raw.issuer_num;
         const sediLink = issuerNum ? `https://ceo.ca/content/sedi/issuers/${issuerNum}` : "N/A";
-
         // --- Stage 1: Market Data ---
         let marketContext = null;
         try {
@@ -69,6 +69,7 @@ export class Analyzer {
             const signal = this._evaluateInsider(ticker, insiderName, iRecords, watchlist.has(ticker), marketContext);
             
             if (signal) {
+            // Only pass if score > 0 and net buy > 0
                 if (signal.score > 0 && signal.netCashInvested > 0) {
                     insiderSignals.push(signal);
                     
@@ -95,7 +96,8 @@ export class Analyzer {
                 insiderSignals.forEach(sig => {
                     if (sig.netCashInvested > 0) {
                         sig.reasons.push(`🤖 Robot Consensus`);
-                        sig.score = Math.round(sig.score * 0.5); 
+                        // 使用配置中的惩罚分 (确保 scoring.js 已更新)
+                        sig.score += (SCORING_CONFIG.SCORES.CLUSTER_PENALTY || -50); 
                     }
                 });
             } else {
@@ -117,23 +119,8 @@ export class Analyzer {
             
             if (watchlist.has(ticker) || maxScoreSignal.score >= SCORING_CONFIG.THRESHOLDS.AI_ANALYSIS_TRIGGER_SCORE) {
                 
-                console.log(`🧠 [AI] Triggered for ${ticker} (Score: ${maxScoreSignal.score}).`);
-                console.log(`   🔗 SEDI Audit: ${sediLink}`);
-                console.log(`   ⏳ Fetching Deep Context...`);
-                
+                // No longer console.log here, all information is passed to index.js via object
                 const news = await newsService.getRecentNews(ticker, companyName);
-                
-                if (news && news.length > 0) {
-                    console.log(`   📰 Found ${news.length} RELEVANT articles:`);
-                    news.forEach(n => {
-                        const status = n.isDeep ? "✅ Deep Read" : "⚠️ Summary Only";
-                        console.log(`      - [${n.time}] ${n.title} (${status})`);
-                        console.log(`        🔗 ${n.link}`);
-                    });
-                } else {
-                    console.log(`   📭 No relevant news found for ${ticker}.`);
-                }
-
                 const totalNetCash = buyingSignals.reduce((sum, s) => sum + s.netCashInvested, 0);
                 
                 const aiAnalysis = await llmService.analyzeSentiment({
@@ -153,6 +140,7 @@ export class Analyzer {
                 activeSignals.forEach(sig => {
                     sig.aiAnalysis = aiAnalysis;
                     sig.aiNews = news;
+                    sig.sediLink = sediLink; // 传递 SEDI 链接
                 });
             }
         }
@@ -169,11 +157,18 @@ export class Analyzer {
         let sellProceeds = 0;
         let isPlan = false; let isPrivate = false; let hasPublicBuy = false;
 
+        // [NEW] 1. Prepare arrays to collect dates and prices
+        let txDates = [];
+        let txPrices = [];
+
         recordList.forEach(r => {
             const tx = r.raw;
             const code = Parser.extractTxCode(tx.type);
             
             if (CFG.CODES.IGNORE.includes(code)) return;
+
+            // [CRITICAL] 2. This interception is very important: if it's a GRANT (56/50 etc.), skip directly, do not count as any buy
+            if (CFG.CODES.GRANT && CFG.CODES.GRANT.includes(code)) return;
 
             let price = Parser.cleanNumber(tx.price || tx.unit_price);
             const amount = Parser.cleanNumber(tx.number_moved);
@@ -186,6 +181,11 @@ export class Analyzer {
             if (amount > 0) { // BUY
                 buyCost += cash;
                 buyVol += absAmount;
+                
+                // [NEW] 3. Collect details of valid buys
+                if (tx.transaction_date) txDates.push(tx.transaction_date);
+                if (price > 0) txPrices.push(price);
+
                 if (CFG.CODES.PLAN_BUY.includes(code)) isPlan = true;
                 else if (CFG.CODES.PRIVATE_BUY.includes(code)) isPrivate = true;
                 else if (CFG.CODES.PUBLIC_BUY === code) hasPublicBuy = true;
@@ -202,26 +202,36 @@ export class Analyzer {
         let score = 0;
         const reasons = [];
 
+        // [NEW] 4. Generate transaction summary string for this insider
+        txDates.sort();
+        const lastDate = txDates.length > 0 ? txDates[txDates.length - 1] : "N/A";
+        const avgPrice = txPrices.length > 0 
+            ? (txPrices.reduce((a, b) => a + b, 0) / txPrices.length).toFixed(2) 
+            : "N/A";
+        // Format example: "2026-01-05 @ $62.50"
+        const txDetailStr = `${lastDate} @ $${avgPrice}`;
+
         if (netCash > 0) {
-            if (isPlan) { score += CFG.SCORES.BASE_PLAN_BUY; reasons.push("📅 Auto-Plan Buy"); }
-            else if (isPrivate) { score += CFG.SCORES.BASE_PRIVATE_BUY; reasons.push("🔒 Private Placement"); }
+            if (isPlan) { score += CFG.SCORES.BASE_PLAN_BUY; reasons.push("📅 Auto-Plan"); }
+            else if (isPrivate) { score += CFG.SCORES.BASE_PRIVATE_BUY; reasons.push("🔒 Private"); }
             else { score += CFG.SCORES.BASE_MARKET_BUY; reasons.push("🔥 Market Buy"); }
 
             if (marketContext && marketContext.marketCap > 0) {
                 const impactRatio = netCash / marketContext.marketCap;
                 if (impactRatio > CFG.THRESHOLDS.SIGNIFICANT_IMPACT_RATIO) {
                     score += CFG.SCORES.SIZE_BONUS * 2; 
-                    reasons.push(`🐋 Whale Impact (${(impactRatio*100).toFixed(2)}% MC)`);
+                    reasons.push(`🐋 Whale (${(impactRatio*100).toFixed(2)}% MC)`);
                 } else if (netCash > CFG.THRESHOLDS.LARGE_SIZE) {
                     score += CFG.SCORES.SIZE_BONUS;
                     reasons.push("💰 Large Size");
                 }
                 
+                // Calculate premium only for public buys
                 if (hasPublicBuy && buyVol > 0 && marketContext.price > 0) {
-                    const avgBuyPrice = buyCost / buyVol;
-                    const discountRate = (marketContext.price - avgBuyPrice) / marketContext.price;
-                    if (discountRate < -0.05) { score += CFG.SCORES.PREMIUM_BUY_BONUS; reasons.push(`💪 Premium Buy`); }
-                    else if (discountRate > 0.30) { score += CFG.SCORES.DISCOUNT_PENALTY; reasons.push(`📉 Deep Discount`); }
+                    const realAvgPrice = buyCost / buyVol;
+                    const discountRate = (marketContext.price - realAvgPrice) / marketContext.price;
+                    if (discountRate < -0.05) { score += CFG.SCORES.PREMIUM_BUY_BONUS; reasons.push(`💪 Premium`); }
+                    else if (discountRate > 0.30) { score += CFG.SCORES.DISCOUNT_PENALTY; reasons.push(`📉 Discount`); }
                 }
                 
                 if (marketContext.price > marketContext.ma50) { score += CFG.SCORES.UPTREND_BONUS; reasons.push("📈 Uptrend"); }
@@ -241,7 +251,16 @@ export class Analyzer {
         }
 
         return { 
-            ticker, insider: insiderName, relation: meta.relationship_type, score, netCashInvested: netCash, reasons, isWatchlisted, sediUrl: null, marketContext 
+            ticker, 
+            insider: insiderName, 
+            relation: meta.relationship_type, 
+            score, 
+            netCashInvested: netCash, 
+            reasons, 
+            isWatchlisted, 
+            sediUrl: null, 
+            marketContext,
+            txDetailStr // [NEW] 5. Pass out details
         };
     }
 }

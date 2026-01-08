@@ -61,7 +61,7 @@ export const SCORING_CONFIG = {
         PRIVATE_BUY: ['11', '16'], // "Private placement", "Acquisition under prospectus"
         PLAN_BUY: ['30', '31'], // "Acquisition under purchase/ownership plan"
         EXERCISE: ['51', '54', '57', '59'], // Derivatives exercises
-        GRANT: ['50', '53', '56'], // Grants (Compensation)
+        GRANT: ['50', '52', '53','55', '56'], // Grants (Compensation)
         
         // Noise codes to strictly ignore to save processing time
         IGNORE: ['90', '97', '99', '00', '35', '37', '38'] 
