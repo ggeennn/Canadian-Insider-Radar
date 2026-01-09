@@ -44,6 +44,7 @@ graph TD;
 
 Implements academic-grade logic (Cohen-Malloy-Pomorski) to filter noise:
 
+* **Grant Isolation (Noise Filter):** Strictly excludes "Compensation" transactions (Codes 50-56). Only "Out-of-pocket" Open Market buys (Code 10) contribute to the conviction score.
 * **Whale Impact:** Detects trades exceeding **0.1% of Market Cap**.
 * **Robot Consensus Defense:** Automatically penalizes "consensus" signals if >50% of participants are executing Auto-Plans (DRIP/ESPP).
 * **Dilution Guard:** Applies a -40 point penalty to Private Placements unless hedged by Open Market buying.
@@ -52,11 +53,10 @@ Implements academic-grade logic (Cohen-Malloy-Pomorski) to filter noise:
 
 * **Problem:** LLMs hallucinate when given only headlines (e.g., interpreting a "Dilutive Financing" headline as positive).
 * **Solution:** Built a **Deep RAG Pipeline** that fetches the full article body (first 1.5k chars).
-* **Resilience:** * **Dual-Search:** Queries both Ticker and Company Name to ensure coverage for micro-caps.
-* **Header Overflow Fix:** Optimized Node.js runtime (`--max-http-header-size=81920`) to handle massive cookies from modern financial sites.
-* **Neo-Theme Adaptability:** Uses heuristic CSS selectors (`data-testid`) to scrape dynamic Yahoo Finance pages.
-
-
+* **Resilience:**
+    * **Dual-Search:** Queries both Ticker and Company Name to ensure coverage for micro-caps.
+    * **Header Overflow Fix:** Optimized Node.js runtime (`--max-http-header-size=81920`) to handle massive cookies from modern financial sites.
+    * **Neo-Theme Adaptability:** Uses heuristic CSS selectors (`data-testid`) to scrape dynamic Yahoo Finance pages.
 
 ## 🚀 Installation & Deployment
 
@@ -105,20 +105,28 @@ npm run dev
 ## 📊 Sample Output (Log)
 
 ```text
-🧠 [AI] Triggered for LUG (Score: 140).
+👀 ============ ============ 👀
+   📊 Market: Price $16.50 | Cap $3,850.5M | AvgVol 450200
+   🧠 [AI] Triggered for LUG (Score: 140).
    🔗 SEDI Audit: [https://ceo.ca/content/sedi/issuers/00036644](https://ceo.ca/content/sedi/issuers/00036644)
-   ⏳ Fetching Deep Context...
-   📰 Found 1 RELEVANT articles:
+
+   📰 News Context (1 articles):
       - [2026-01-05] Lundin Gold Reports Record Production (✅ Deep Read)
         🔗 [https://finance.yahoo.com/news/lundin-gold](https://finance.yahoo.com/news/lundin-gold)...
 
-   🧠 [AI REPORT]:
+   🧠:
       **🐂 BULL THESIS**
       - Production beat guidance by 15%, aligning with the CEO's $500k open market buy.
       - Cash flow is sufficient to fund expansion without dilution.
       **⚖️ VERDICT**
       - BULLISH. Strong fundamental catalyst backing the insider conviction.
-
+   --------------------------------------------------
+   🎯 🔥🔥 R. Hochstein (CEO)
+      Score: 140 | Net: $525,000
+      Details: 2026-01-08 @ $16.45
+      Reasons: 🔥 Market Buy, 🐋 Whale (0.15% MC), 📈 Uptrend
+   --------------------------------------------------
+   
 ```
 
 ## 🔮 Roadmap
