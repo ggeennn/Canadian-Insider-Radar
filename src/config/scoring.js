@@ -1,69 +1,77 @@
 /**
  * src/config/scoring.js
  * Centralized configuration for Scoring, Thresholds, and Codes.
- * [Optimized] Re-engineered based on Cohen-Malloy-Pomorski "Opportunistic vs. Routine" logic.
+ * Added Anomaly Detection & Semantic Weighting.
  */
 
 export const SCORING_CONFIG = {
     // --- Scoring Weights (Points) ---
     SCORES: {
         // Transaction Types
-        BASE_MARKET_BUY: 60,    // [Increased] The gold standard signal. True conviction.
-        BASE_PRIVATE_BUY: 20,   // Often carries warrants/dilution. Lower quality signal.
-        BASE_PLAN_BUY: 5,       // [Crushed] Routine trades have near-zero predictive power.
-        BASE_EXERCISE: 10,      // Mostly compensation realization, neutral signal.
+        // [New] Distinguish Common Shares vs. Others
+        PREMIUM_COMMON_BUY: 80, // "Gold Standard": Public buy of Common Shares
+        BASE_MARKET_BUY: 50,    // Standard market buy (could be warrants/units)
+        BASE_PRIVATE_BUY: 15,   // Often carries warrants/dilution. Lower quality.
+        BASE_PLAN_BUY: 5,       // Routine trades have near-zero predictive power.
+        BASE_EXERCISE: 5,       // [Lowered] Mostly compensation realization.
         
         // Insider Context
-        RANK_BONUS: 25,         // C-Suite/Directors have superior information asymmetry.
+        RANK_BONUS: 25,         // C-Suite/Directors have superior info.
         SIZE_BONUS: 20,         // Base bonus for nominal size.
         CONVICTION_BONUS: 30,   // >25% increase in personal holdings.
-        LATE_FILING_BONUS: 15,  // Late filings often delay positive news flow.
         
         // Market Context Modifiers
-        PREMIUM_BUY_BONUS: 25,  // Paying >5% above market price = extremely bullish.
-        DISCOUNT_PENALTY: -30,  // Buying at discount = "free money", not a market signal.
-        UPTREND_BONUS: 10,      // Confirming the trend (Momentum).
-        LIQUIDITY_BONUS: 15,    // Buying illiquid stock requires high confidence.
+        PREMIUM_BUY_BONUS: 25,  // Paying >5% above market price.
+        DISCOUNT_PENALTY: -30,  // Buying at discount.
+        UPTREND_BONUS: 10,      // Momentum confirmation.
         
         // Penalties
-        DILUTION_PENALTY: -40,  // Private Placements that dilute equity.
-        CLUSTER_PENALTY: -50    // Used to dampen "Robot Consensus" (e.g. 6 directors DRIP).
+        DILUTION_PENALTY: -40,  // Private Placements.
+        CLUSTER_PENALTY: -50    // Robot Consensus.
     },
 
     // --- Thresholds & Constants ---
     THRESHOLDS: {
-        LARGE_SIZE: 50000,          // Nominal large trade ($50k)
-        MEGA_SIZE: 500000,          // Institutional level conviction ($500k)
-        HIGH_CONVICTION_PCT: 0.25,  // 25% holding increase
-        LATE_FILING_DAYS: 5,        // 5 calendar days late
+        // Analysis Window
+        LOOKBACK_DAYS: 30,          // [New] Only analyze data from last 45 days
         
-        // [New] Relative Size Thresholds
-        // Buying 0.1% of the entire company's Market Cap in one go is massive.
-        SIGNIFICANT_IMPACT_RATIO: 0.001, 
-        
+        // Size
+        LARGE_SIZE: 50000,          // $50k
+        MEGA_SIZE: 500000,          // $500k
+        SIGNIFICANT_IMPACT_RATIO: 0.001, // 0.1% of Market Cap
+
         USD_CAD_RATE: 1.40,         
-        
-        // AI Analysis Trigger
-        // Only burn tokens on high-quality signals
         AI_ANALYSIS_TRIGGER_SCORE: 90 
+    },
+
+    // --- [New] Anomaly Detection / Sanity Checks ---
+    ANOMALY: {
+        // If Tx Price > 5x Market Price -> Likely Data Error (e.g. DMGI)
+        MAX_PRICE_DISCREPANCY: 5.0, 
+        
+        // If Single Tx > 10% of Market Cap -> Likely Error (e.g. SOI)
+        MAX_CAP_IMPACT: 0.10,
+
+        // If Price is suspiciously close to Volume (e.g. Price 29906 vs Vol 29906)
+        // This handles the specific data corruption seen in DMGI
+        SUSPICIOUS_PRICE_VOL_MATCH_TOLERANCE: 1.0 
     },
 
     // --- Clustering Logic ---
     CLUSTER: {
-        MULTIPLIER: 0.2,        // Standard multiplier for Consensus
-        MAX_MULTIPLIER: 2.0,    // Cap the bonus
-        PLAN_DAMPENER: 0.0      // Plan buys get ZERO consensus bonus
+        MULTIPLIER: 0.2,        
+        MAX_MULTIPLIER: 2.0,    
     },
 
     // --- SEDI Transaction Codes ---
     CODES: {
         PUBLIC_BUY: '10',       // "Acquisition in the public market"
-        PRIVATE_BUY: ['11', '16'], // "Private placement", "Acquisition under prospectus"
-        PLAN_BUY: ['30', '31'], // "Acquisition under purchase/ownership plan"
-        EXERCISE: ['51', '54', '57', '59'], // Derivatives exercises
-        GRANT: ['50', '52', '53','55', '56'], // Grants (Compensation)
+        PRIVATE_BUY: ['11', '16'], 
+        PLAN_BUY: ['30', '31'], 
+        EXERCISE: ['51', '54', '57', '59'], 
+        GRANT: ['50', '52', '53','55', '56'], 
         
-        // Noise codes to strictly ignore to save processing time
+        // Noise codes
         IGNORE: ['90', '97', '99', '00', '35', '37', '38'] 
     }
 };

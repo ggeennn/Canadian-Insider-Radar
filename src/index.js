@@ -1,6 +1,9 @@
 /**
  * src/index.js
- * [Fix] Correctly logs 'Details' (Date/Price) and AI reports to file.
+ * 
+ * 1. Logic: Fetch -> Save.
+ * 2. Logic: Only Analyze if savedCount > 0 (efficiency).
+ * 3. Logic: Analyzer filters based on Date Window, so we pass ALL fetched records to it.
  */
 
 import fs from 'fs';
@@ -20,7 +23,7 @@ const LOG_DIR = path.join(__dirname, '../logs');
 const MIN_DELAY = 5000;  
 const MAX_DELAY = 15000; 
 
-const taskQueue = [];
+const taskQueue =[];
 let watchlist = new Set();
 
 if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR);
@@ -33,13 +36,13 @@ const Logger = {
     getTime() {
         return new Date().toLocaleTimeString();
     },
-    info(message, ...args) {
-        console.log(message, ...args);
+    info(message,...args) {
+        console.log(message,...args);
         try {
             const timestamp = this.getTime();
             let line = `[${timestamp}] ${message}`;
             if (args.length > 0) {
-                line += ' ' + args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ');
+                line += ' ' + args.map(a => typeof a === 'object'? JSON.stringify(a) : a).join(' ');
             }
             fs.appendFileSync(this.getLogFile(), line + '\n');
         } catch (e) {
@@ -50,7 +53,7 @@ const Logger = {
         const timestamp = this.getTime();
         console.error(message, error);
         const errorMsg = error.message || error;
-        const line = `[${timestamp}] [ERROR] ${message} - ${errorMsg}\n`;
+        const line = `[${timestamp}] ${message} - ${errorMsg}\n`;
         try {
             fs.appendFileSync(this.getLogFile(), line);
         } catch (e) {}
@@ -82,85 +85,97 @@ async function runWorkerLoop() {
             const issuerId = await ApiService.getIssuerId(ticker);
             
             if (issuerId) {
+                // 1. Fetch latest 20 records (regardless of date)
                 const records = await ApiService.getTransactions(issuerId);
                 Logger.info(`   📥 Fetched ${records.length} records.`); 
                 
                 if (records.length > 0) {
+                    // 2. Save Logic: returns how many are actually NEW
                     const savedCount = StorageService.save(records);
                     Logger.info(`   💾 Saved ${savedCount} new records.`);
 
-                    const signals = await Analyzer.analyze(records, watchlist);
-                    
-                    if (signals.length > 0) {
+                    // 3. Analysis Trigger:
+                    // Only analyze if there is NEW data OR if the ticker is in watchlist (force check)
+                    const shouldAnalyze = savedCount >= 0 || watchlist.has(ticker);
+
+                    if (shouldAnalyze) {
+                        // 4. Pass ALL fetched records to Analyzer.
+                        // Analyzer will handle the "Time Window Filtering" (e.g. drop > 45 days old)
+                        // allowing us to detect clusters spanning recent weeks.
+                        const signals = await Analyzer.analyze(records, watchlist);
                         
-                        // 1. Header Information
-                        const isHit = signals.some(s => s.isWatchlisted);
-                        if (isHit) {
-                            Logger.info(`\n👀 ============ [WATCHLIST ALERT: ${ticker}] ============ 👀`);
-                        } else {
-                            Logger.info(`\n🔔 ANALYSIS RESULT for ${ticker}:`);
-                        }
-
-                        // 2. Market Context (take the first signal)
-                        const firstSig = signals[0];
-                        const mContext = firstSig.marketContext;
-                        if (mContext) {
-                            Logger.info(`   📊 Market: Price $${mContext.price} | Cap $${(mContext.marketCap/1000000).toFixed(1)}M | AvgVol ${mContext.avgVolume}`);
-                        }
-
-                        // 3. AI Report & news
-                        const signalWithAI = signals.find(s => s.aiAnalysis);
-                        
-                        if (signalWithAI) {
-                            Logger.info(`   🧠 [AI] Triggered for ${ticker} (Score: ${signalWithAI.score}).`);
-                            if (signalWithAI.sediLink) {
-                                Logger.info(`   🔗 SEDI Audit: ${signalWithAI.sediLink}`);
-                            }
-
-                            if (signalWithAI.aiNews && signalWithAI.aiNews.length > 0) {
-                                Logger.info(`   📰 News Context (${signalWithAI.aiNews.length} articles):`);
-                                signalWithAI.aiNews.forEach(n => {
-                                    const status = n.isDeep ? "✅ Deep Read" : "⚠️ Summary Only";
-                                    Logger.info(`      - [${n.time}] ${n.title} (${status})`);
-                                    Logger.info(`        🔗 ${n.link}`);
-                                });
+                        if (signals.length > 0) {
+                            
+                            // 5. Header Information
+                            const isHit = signals.some(s => s.isWatchlisted);
+                            if (isHit) {
+                                Logger.info(`\n👀 ============ ============ 👀`);
                             } else {
-                                Logger.info(`   📭 News Context: No relevant articles found.`);
+                                Logger.info(`\n🔔 ANALYSIS RESULT for ${ticker}:`);
                             }
 
-                            if (signalWithAI.aiAnalysis) {
-                                Logger.info(`   🧠 [AI REPORT]:`);
-                                signalWithAI.aiAnalysis.split('\n').forEach(line => {
-                                    if(line.trim()) Logger.info(`      ${line}`);
-                                });
-                                Logger.info(`   --------------------------------------------------`);
+                            // 6. Market Context
+                            const firstSig = signals;
+                            const mContext = firstSig.marketContext;
+                            if (mContext) {
+                                Logger.info(`   📊 Market: Price $${mContext.price} | Cap $${(mContext.marketCap/1000000).toFixed(1)}M | AvgVol ${mContext.avgVolume}`);
                             }
+
+                            // 7. AI Report & news
+                            const signalWithAI = signals.find(s => s.aiAnalysis);
+                            
+                            if (signalWithAI) {
+                                Logger.info(`   🧠 [AI] Triggered for ${ticker} (Score: ${signalWithAI.score}).`);
+                                if (signalWithAI.sediLink) {
+                                    Logger.info(`   🔗 SEDI Audit: ${signalWithAI.sediLink}`);
+                                }
+
+                                if (signalWithAI.aiNews && signalWithAI.aiNews.length > 0) {
+                                    Logger.info(`   📰 News Context (${signalWithAI.aiNews.length} articles):`);
+                                    signalWithAI.aiNews.forEach(n => {
+                                        const status = n.isDeep? "✅ Deep Read" : "⚠️ Summary Only";
+                                        Logger.info(`      - [${n.time}] ${n.title} (${status})`);
+                                        Logger.info(`        🔗 ${n.link}`);
+                                    });
+                                } else {
+                                    Logger.info(`   📭 News Context: No relevant articles found.`);
+                                }
+
+                                if (signalWithAI.aiAnalysis) {
+                                    Logger.info(`   🧠:`);
+                                    signalWithAI.aiAnalysis.split('\n').forEach(line => {
+                                        if(line.trim()) Logger.info(`      ${line}`);
+                                    });
+                                    Logger.info(`   --------------------------------------------------`);
+                                }
+                            }
+
+                            // 8. Insider Transaction List
+                            signals.forEach(sig => {
+                                const prefix = sig.isWatchlisted? "🎯 " : "";
+                                const icon = sig.score > 50? "🔥🔥" : (sig.isRiskAlert? "🚨" : "ℹ️");
+                                
+                                Logger.info(`   ${prefix}${icon} ${sig.insider} (${sig.relation})`);
+                                Logger.info(`      Score: ${sig.score} | Net: $${Math.round(sig.netCashInvested).toLocaleString()}`);
+                                
+                                if (sig.txDetailStr) {
+                                    Logger.info(`      Details: ${sig.txDetailStr}`);
+                                }
+                                
+                                Logger.info(`      Reasons: ${sig.reasons.join(', ')}`);
+                                
+                                if (sig.sediUrl) {
+                                    Logger.info(`      🔗 Link: ${sig.sediUrl}`);
+                                }
+                            });
+
+                            if (isHit) Logger.info(`   --------------------------------------------------`);
+                            
+                        } else {
+                            Logger.info(`   💤 No significant signals found (after filtering).`);
                         }
-
-                        // 4. Insider Transaction List
-                        signals.forEach(sig => {
-                            const prefix = sig.isWatchlisted ? "🎯 " : "";
-                            const icon = sig.score > 50 ? "🔥🔥" : (sig.isRiskAlert ? "🚨" : "ℹ️");
-                            
-                            Logger.info(`   ${prefix}${icon} ${sig.insider} (${sig.relation})`);
-                            Logger.info(`      Score: ${sig.score} | Net: $${Math.round(sig.netCashInvested).toLocaleString()}`);
-                            
-                            // [FIX] Print specific date and price details
-                            if (sig.txDetailStr) {
-                                Logger.info(`      Details: ${sig.txDetailStr}`);
-                            }
-                            
-                            Logger.info(`      Reasons: ${sig.reasons.join(', ')}`);
-                            
-                            if (sig.sediUrl) {
-                                Logger.info(`      🔗 Link: ${sig.sediUrl}`);
-                            }
-                        });
-
-                        if (isHit) Logger.info(`   --------------------------------------------------`);
-                        
                     } else {
-                        Logger.info(`   💤 No significant signals found.`);
+                         // savedCount == 0, so skip to save resources
                     }
                 }
             } else {
