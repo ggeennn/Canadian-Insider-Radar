@@ -6,3 +6,4 @@ data/
 test/
 logs/
 state/
+src/config/watchlist.json

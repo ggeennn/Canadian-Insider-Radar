@@ -11,7 +11,7 @@ export class LLMService {
     constructor() {
         this.client = new OpenAI({
             baseURL: process.env.LLM_BASE_URL,
-            apiKey: process.env.LLM_API,
+            apiKey: process.env.LLM_API
         });
         this.model = process.env.LLM_MODEL;
     }

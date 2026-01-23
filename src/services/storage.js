@@ -1,6 +1,6 @@
 /**
  * src/services/storage.js
- * Returns count of NEW records to trigger analysis pipeline.
+ * [Updated] Added In-Memory Cache & getHistory() for Stateful Analysis.
  */
 
 import fs from 'fs';
@@ -14,8 +14,9 @@ const NOISE_CODES = ['90', '97', '99', '35', '37', '00'];
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 
 const knownSediIds = new Set();
+const memoryDb = []; // 🧠 [New] In-Memory Database
 
-// Load existing IDs
+// Load existing IDs & Records
 if (fs.existsSync(HISTORY_FILE)) {
     try {
         const content = fs.readFileSync(HISTORY_FILE, 'utf8');
@@ -23,16 +24,19 @@ if (fs.existsSync(HISTORY_FILE)) {
             if (!line.trim()) return;
             try {
                 const record = JSON.parse(line);
-                if (record.sediId) knownSediIds.add(record.sediId);
+                if (record.sediId) {
+                    knownSediIds.add(record.sediId);
+                    memoryDb.push(record); // 🧠 Load history to memory
+                }
             } catch (err) {}
         });
-        console.log(`📚 Storage loaded. Known transactions: ${knownSediIds.size}`);
+        console.log(`📚 Storage loaded. Records: ${memoryDb.length} | Unique IDs: ${knownSediIds.size}`);
     } catch (e) { console.warn("⚠️ Error reading history file."); }
 }
 
 export const StorageService = {
     /**
-     * Saves unique records to history.
+     * Saves unique records to history and updates memory cache.
      * @returns {number} The count of NEW records actually saved.
      */
     save(transactions) {
@@ -70,6 +74,7 @@ export const StorageService = {
 
             stream.write(JSON.stringify(entry) + '\n');
             knownSediIds.add(record.sediId);
+            memoryDb.push(entry); // 🧠 Sync to memory
             savedCount++;
         });
 
@@ -77,6 +82,22 @@ export const StorageService = {
         return savedCount;
     },
     
+    /**
+     * [New] Retrieves full history for a specific ticker from memory.
+     * @param {string} ticker - e.g. "DNTL.TO" or "DNTL"
+     * @returns {Array} List of record objects
+     */
+    getHistory(ticker) {
+        if (!ticker) return [];
+        const cleanTicker = ticker.replace('$', '').toUpperCase().split('.')[0]; // "DNTL"
+        
+        return memoryDb.filter(r => {
+            if (!r.symbol) return false;
+            // Loose match: "DNTL.TO" includes "DNTL"
+            return r.symbol.toUpperCase().includes(cleanTicker);
+        });
+    },
+
     isKnown(sediId) {
         return knownSediIds.has(sediId);
     }

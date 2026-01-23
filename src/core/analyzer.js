@@ -1,9 +1,10 @@
 /**
- * src/core/analyzer.js
- * 
- * 1. Implements 'Lookback Window' to ignore stale data (fix PKK).
- * 2. Implements 'Sanity Check' to drop anomalies (fix DMGI, SOI).
- * 3. Weights 'Common Shares' higher than Units/Warrants.
+ * src/core/analyzer.js (v10.0 - The Unified Analyzer)
+ * Integrates ALL features:
+ * 1. Lookback Window (Stale data fix)
+ * 2. Anomaly Detection (DMGI/SOI fix)
+ * 3. Grant Isolation (Compensation fix)
+ * 4. Watchlist Sell Alerts (Follow-sell logic)
  */
 import { Parser } from '../utils/parser.js';
 import { MarketContextFactory } from '../services/market_data/market_context_factory.js';
@@ -19,7 +20,7 @@ export class Analyzer {
     static _groupByTicker(records) { 
         return records.reduce((acc, r) => { 
             const t = r.symbol || r.raw.symbol; 
-            (acc[t] = acc[t] ||[]).push(r); 
+            (acc[t] = acc[t] || []).push(r); 
             return acc; 
         }, {}); 
     }
@@ -27,28 +28,27 @@ export class Analyzer {
     static _groupByInsider(records) { 
         return records.reduce((acc, r) => { 
             const n = r.raw.insider_name; 
-            (acc[n] = acc[n] ||[]).push(r); 
+            (acc[n] = acc[n] || []).push(r); 
             return acc; 
         }, {}); 
     }
 
     /**
      * Filter records to ensure we only analyze recent valid data.
-     * Solves the "PKK" issue where 1-year old data was re-analyzed.
      */
     static _filterRecentRecords(records) {
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - SCORING_CONFIG.THRESHOLDS.LOOKBACK_DAYS);
         
         return records.filter(r => {
-            if (!r.date) return false; // Safety
+            if (!r.date) return false; 
             const txDate = new Date(r.date);
             return txDate >= cutoffDate;
         });
     }
 
     static async analyze(allFetchedRecords, watchlist = new Set()) {
-        // [New] Step 1: Apply Time-Window Filter globally
+        // [Step 1] Apply Time-Window Filter globally
         const recentRecords = this._filterRecentRecords(allFetchedRecords);
         
         // Deduplicate
@@ -57,7 +57,7 @@ export class Analyzer {
         const uniqueRecords = Array.from(uniqueMap.values());
         
         const tickerGroups = this._groupByTicker(uniqueRecords);
-        const allSignals =[];
+        const allSignals = [];
 
         for (const ticker in tickerGroups) {
             const tickerRecords = tickerGroups[ticker];
@@ -69,14 +69,14 @@ export class Analyzer {
 
     static async _analyzeTicker(ticker, records, watchlist) {
         const insiderGroups = this._groupByInsider(records);
-        const insiderSignals =[];
-        const buyingSignals =[]; 
-        const planSignals =[]; 
+        const insiderSignals = [];
+        const buyingSignals = []; 
+        const planSignals = []; 
 
         const firstRecord = records[0];
         const companyName = firstRecord.raw.issuer_name || firstRecord.raw.issuer || null;
         const issuerNum = firstRecord.raw.issuer_number || firstRecord.raw.issuer_num;
-        const sediLink = issuerNum? `https://ceo.ca/content/sedi/issuers/${issuerNum}` : "N/A";
+        const sediLink = issuerNum ? `https://ceo.ca/content/sedi/issuers/${issuerNum}` : "N/A";
 
         // --- Stage 1: Market Data ---
         let marketContext = null;
@@ -88,10 +88,10 @@ export class Analyzer {
         // --- Stage 2: Evaluate Insiders ---
         for (const insiderName in insiderGroups) {
             const iRecords = insiderGroups[insiderName];
-            // Pass Market Context for Sanity Checks
             const signal = this._evaluateInsider(ticker, insiderName, iRecords, watchlist.has(ticker), marketContext);
             
             if (signal) {
+                // 逻辑分支 A: 有效买入 (Score > 0 & Net > 0)
                 if (signal.score > 0 && signal.netCashInvested > 0) {
                     insiderSignals.push(signal);
                     
@@ -102,6 +102,7 @@ export class Analyzer {
                         }
                     }
                 } 
+                // 逻辑分支 B: Watchlist 特权 (显示卖出、低分交易)
                 else if (watchlist.has(ticker)) {
                     insiderSignals.push(signal);
                 }
@@ -118,7 +119,8 @@ export class Analyzer {
                 insiderSignals.forEach(sig => {
                     if (sig.netCashInvested > 0) {
                         sig.reasons.push(`🤖 Robot Consensus`);
-                        sig.score += (SCORING_CONFIG.SCORES.CLUSTER_PENALTY); 
+                        // 使用配置中的惩罚分
+                        sig.score += (SCORING_CONFIG.SCORES.CLUSTER_PENALTY || -50); 
                     }
                 });
             } else {
@@ -136,7 +138,7 @@ export class Analyzer {
         const activeSignals = insiderSignals.filter(s => s.score >= 20 && s.netCashInvested > 0);
         
         if (activeSignals.length > 0) {
-            const maxScoreSignal = activeSignals.reduce((prev, cur) => (prev.score > cur.score)? prev : cur);
+            const maxScoreSignal = activeSignals.reduce((prev, cur) => (prev.score > cur.score) ? prev : cur);
             
             if (watchlist.has(ticker) || maxScoreSignal.score >= SCORING_CONFIG.THRESHOLDS.AI_ANALYSIS_TRIGGER_SCORE) {
                 
@@ -170,7 +172,7 @@ export class Analyzer {
 
     static _evaluateInsider(ticker, insiderName, recordList, isWatchlisted, marketContext) {
         const CFG = SCORING_CONFIG;
-        const ANOMALY = CFG.ANOMALY;
+        const ANOMALY = CFG.ANOMALY; // [Restored] 恢复异常检测配置
         const meta = recordList[0].raw;
         
         let buyVol = 0; 
@@ -178,14 +180,21 @@ export class Analyzer {
         let sellProceeds = 0;
         let isPlan = false; let isPrivate = false; let hasPublicBuy = false;
 
-        let txDates =[];
-        let txPrices =[];
+        let txDates = [];
+        let txPrices = [];
+
+        // [New] Sell tracking for Watchlist
+        let sellDates = [];
+        let sellPrices = [];
+        let sellVol = 0;
 
         for (const r of recordList) {
             const tx = r.raw;
             const code = Parser.extractTxCode(tx.type);
             
             if (CFG.CODES.IGNORE.includes(code)) continue;
+            
+            // [Check 1] Grant Isolation: Ignore compensation
             if (CFG.CODES.GRANT && CFG.CODES.GRANT.includes(code)) continue;
 
             let price = Parser.cleanNumber(tx.price || tx.unit_price);
@@ -195,26 +204,22 @@ export class Analyzer {
             let multiplier = 1.0;
             if ((tx.currency || "").includes("USD")) multiplier = CFG.THRESHOLDS.USD_CAD_RATE;
             
-            // --- [New] ANOMALY DETECTION (The DMGI/SOI Fix) ---
-            // 1. Check for specific data corruption (Price ≈ Volume)
+            // --- [Check 2] ANOMALY DETECTION (Restored) ---
+            // 2.1: Price vs Volume Glitch (e.g. DMGI)
             if (Math.abs(price - absAmount) < ANOMALY.SUSPICIOUS_PRICE_VOL_MATCH_TOLERANCE && price > 100) {
-                 // Log internally if needed, but for now just skip this corrupted record
-                 continue;
+                 continue; // Skip corrupted record
             }
 
-            // 2. Market Context Sanity Checks
+            // 2.2: Market Context Sanity Checks
             if (marketContext) {
-                // Price Sanity: Insider Price vs Market Price
+                // Price Sanity
                 if (marketContext.price > 0 && price > (marketContext.price * ANOMALY.MAX_PRICE_DISCREPANCY)) {
-                    // Skip ridiculous prices (e.g. $29k vs $0.25)
-                    continue;
+                    continue; // Skip ridiculous prices
                 }
-                
-                // Cap Impact Sanity: Single Tx vs Market Cap
+                // Cap Impact Sanity
                 const tentativeCash = absAmount * price * multiplier;
                 if (marketContext.marketCap > 0 && tentativeCash > (marketContext.marketCap * ANOMALY.MAX_CAP_IMPACT)) {
-                    // Skip ridiculous sizes (e.g. $4.5B vs $75M)
-                    continue;
+                    continue; // Skip ridiculous sizes
                 }
             }
 
@@ -232,27 +237,47 @@ export class Analyzer {
                 else if (CFG.CODES.PUBLIC_BUY === code) hasPublicBuy = true;
             } else { // SELL
                 sellProceeds += cash;
+
+                // [New] Watchlist Follow-Sell Logic
+                // Catch Code 10 (Public Disposition) specifically
+                if (code === CFG.CODES.PUBLIC_BUY) { 
+                    if (tx.transaction_date) sellDates.push(tx.transaction_date);
+                    if (price > 0) sellPrices.push(price);
+                    sellVol += absAmount;
+                }
             }
         }
 
         const netCash = buyCost - sellProceeds;
         
-        // Basic noise filter
-        if (netCash < 0 &&!isWatchlisted) return null;
-        if (netCash < 5000 && netCash >= 0 &&!isWatchlisted) return null;
+        // Filter logic
+        if (netCash < 0 && !isWatchlisted) return null;
+        if (netCash < 5000 && netCash >= 0 && !isWatchlisted) return null;
 
         let score = 0;
-        const reasons =[];
+        const reasons = [];
 
+        // 1. Generate Buy Details
         txDates.sort();
-        const lastDate = txDates.length > 0? txDates : "N/A";
+        const lastDate = txDates.length > 0 ? txDates[txDates.length - 1] : "N/A";
         const avgPrice = txPrices.length > 0 
            ? (txPrices.reduce((a, b) => a + b, 0) / txPrices.length).toFixed(2) 
             : "N/A";
-        const txDetailStr = `${lastDate} @ $${avgPrice}`;
+        const txDetailStr = (buyVol > 0) ? `${lastDate} @ ~$${avgPrice}` : null;
+
+        // 2. Generate Sell Alerts
+        let sellDetailStr = null;
+        if (sellDates.length > 0) {
+            sellDates.sort();
+            const lastSellDate = sellDates[sellDates.length - 1];
+            const avgSellPrice = sellPrices.length > 0 
+                ? (sellPrices.reduce((a, b) => a + b, 0) / sellPrices.length).toFixed(2) 
+                : "N/A";
+            sellDetailStr = `⚠️ SOLD ${sellVol.toLocaleString()} shares @ ~$${avgSellPrice} (Last: ${lastSellDate})`;
+        }
 
         if (netCash > 0) {
-            // [New] Semantic Weighting Logic
+            // Semantic Weighting
             if (isPlan) { 
                 score += CFG.SCORES.BASE_PLAN_BUY; 
                 reasons.push("📅 Auto-Plan"); 
@@ -262,13 +287,13 @@ export class Analyzer {
                 reasons.push("🔒 Private"); 
             }
             else { 
-                // It's a Market Buy. Is it Common Shares?
+                // Common Shares Check
                 const securityName = (meta.security || "").toLowerCase();
                 const isCommon = securityName.includes("common") || securityName.includes("voting");
                 
                 if (hasPublicBuy && isCommon) {
                     score += CFG.SCORES.PREMIUM_COMMON_BUY;
-                    reasons.push("💎 Common Shares"); // Premium Signal
+                    reasons.push("💎 Common Shares"); 
                 } else {
                     score += CFG.SCORES.BASE_MARKET_BUY;
                     reasons.push("🔥 Market Buy");
@@ -318,7 +343,8 @@ export class Analyzer {
             isWatchlisted, 
             sediUrl: null, 
             marketContext,
-            txDetailStr 
+            txDetailStr,
+            sellDetailStr 
         };
     }
 }
