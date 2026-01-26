@@ -74,6 +74,42 @@ function loadWatchlist() {
     }
 }
 
+function formatAIReport(report) {
+    if (!report || !report.verdict) return ["   🧠 Analysis Unavailable/Error"];
+
+    const lines = [];
+    
+    // 1. Verdict Header
+    const v = report.verdict;
+    const icon = v.direction === 'BULLISH' ? '🟢' : (v.direction === 'BEARISH' ? '🔴' : '⚪');
+    lines.push(`   🧠 [AI VERDICT]: ${icon} ${v.direction} (Confidence: ${v.confidence_score}%)`);
+    lines.push(`      "${v.one_sentence_summary}"`);
+    
+    // 2. Metadata
+    const m = report.meta;
+    lines.push(`      [Source Quality: ${m.data_quality} | Catalyst: ${m.catalyst_identified ? '✅ Yes' : '❌ No'}]`);
+
+    // 3. Thesis Points
+    if (report.bull_thesis && report.bull_thesis.length > 0) {
+        lines.push(`      🐂 BULL THESIS:`);
+        report.bull_thesis.forEach(p => lines.push(`         • ${p}`));
+    }
+
+    if (report.bear_risks && report.bear_risks.length > 0) {
+        lines.push(`      🐻 BEAR RISKS:`);
+        report.bear_risks.forEach(p => lines.push(`         • ${p}`));
+    }
+    
+    // (Optional) Debug Reasoning
+    // lines.push(`      💭 [Logic]: ${report.hidden_reasoning.substring(0, 100)}...`);
+
+    lines.push(`   --------------------------------------------------`);
+    return lines;
+}
+
+
+
+
 async function runWorkerLoop() {
     if (taskQueue.length > 0) {
         const ticker = taskQueue.shift();
@@ -135,10 +171,13 @@ async function runWorkerLoop() {
                             
                             if (signalWithAI) {
                                 Logger.info(`   🧠 [AI] Triggered for ${ticker} (Score: ${signalWithAI.score}).`);
+                                
+                                // Link Log
                                 if (signalWithAI.sediLink) {
                                     Logger.info(`   🔗 SEDI Audit: ${signalWithAI.sediLink}`);
                                 }
 
+                                // News Log
                                 if (signalWithAI.aiNews && signalWithAI.aiNews.length > 0) {
                                     Logger.info(`   📰 News Context (${signalWithAI.aiNews.length} articles):`);
                                     signalWithAI.aiNews.forEach(n => {
@@ -150,12 +189,10 @@ async function runWorkerLoop() {
                                     Logger.info(`   📭 News Context: No relevant articles found.`);
                                 }
 
+                                // [NEW] Structured Report Rendering
                                 if (signalWithAI.aiAnalysis) {
-                                    Logger.info(`   🧠 [AI REPORT]:`);
-                                    signalWithAI.aiAnalysis.split('\n').forEach(line => {
-                                        if(line.trim()) Logger.info(`      ${line}`);
-                                    });
-                                    Logger.info(`   --------------------------------------------------`);
+                                    const formattedLines = formatAIReport(signalWithAI.aiAnalysis);
+                                    formattedLines.forEach(line => Logger.info(line));
                                 }
                             }
 

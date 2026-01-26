@@ -1,77 +1,89 @@
 /**
- * src/config/scoring.js
- * Centralized configuration for Scoring, Thresholds, and Codes.
- * Added Anomaly Detection & Semantic Weighting.
+ * src/config/scoring.js (v10.1 - Optimization Release)
+ * * [Audit Implementation]
+ * 1. Added Sigmoid Parameters for Probability Normalization.
+ * 2. Added Role Multipliers for Weighted Flow Analysis.
+ * 3. Refined Scores based on Statistical Properties.
  */
 
 export const SCORING_CONFIG = {
+    // --- [New] Sigmoid Normalization Config (Phase 1) ---
+    // Formula: 100 / (1 + Math.exp(-k * (rawScore - midpoint)))
+    // Target: Map unbounded scores to 0-100 probability scale.
+    SIGMOID: {
+        k: 0.1,        // Steepness (陡峭度): Controls sensitivity around the midpoint.
+        midpoint: 50   // Pivot Point (中点): Score considered "Neutral" (50% probability).
+    },
+
+    // --- [New] Role Weights (Phase 2) ---
+    // Based on Information Asymmetry Theory (Wang et al., 2012)
+    // CFOs > CEOs > Senior Officers > Directors > 10% Owners
+    ROLE_MULTIPLIERS: {
+        CFO: 2.0,           // Highest info asymmetry (Financial health access)
+        CEO: 1.5,           // High info, but potential signaling/PR bias
+        OFFICER: 1.2,       // Operational insight (VP, Senior Officer)
+        DIRECTOR: 1.0,      // Baseline (Non-executive directors)
+        OWNER: 0.5,         // Low signal-to-noise (Funds, VC exits)
+        DEFAULT: 1.0
+    },
+
     // --- Scoring Weights (Points) ---
+    // Re-calibrated for Linear Inputs before Sigmoid
     SCORES: {
-        // Transaction Types
-        // [New] Distinguish Common Shares vs. Others
-        PREMIUM_COMMON_BUY: 80, // "Gold Standard": Public buy of Common Shares
-        BASE_MARKET_BUY: 50,    // Standard market buy (could be warrants/units)
-        BASE_PRIVATE_BUY: 15,   // Often carries warrants/dilution. Lower quality.
-        BASE_PLAN_BUY: 5,       // Routine trades have near-zero predictive power.
-        BASE_EXERCISE: 5,       // [Lowered] Mostly compensation realization.
+        // [Categorical] Transaction Quality
+        PREMIUM_COMMON_BUY: 60, // Reduced from 80 (Let volume/role drive the score)
+        BASE_MARKET_BUY: 40,    
+        BASE_PRIVATE_BUY: 10,   // High dilution risk
+        BASE_PLAN_BUY: 0,       // Plans are noise, 0 points (neutral)
         
-        // Insider Context
-        RANK_BONUS: 25,         // C-Suite/Directors have superior info.
-        SIZE_BONUS: 20,         // Base bonus for nominal size.
-        CONVICTION_BONUS: 30,   // >25% increase in personal holdings.
+        // [Ordinal] Insider Context
+        RANK_BONUS: 20,         // Additional bonus on top of Role Multiplier
+        CONVICTION_BONUS: 25,   // >25% holdings increase
         
-        // Market Context Modifiers
-        PREMIUM_BUY_BONUS: 25,  // Paying >5% above market price.
-        DISCOUNT_PENALTY: -30,  // Buying at discount.
-        UPTREND_BONUS: 10,      // Momentum confirmation.
+        // [Continuous/Binary] Market Context
+        PREMIUM_PRICE_BONUS: 20,// Buying above market price (Strength)
+        DISCOUNT_PENALTY: -20,  // Buying below market (Weakness/Warrants)
+        UPTREND_BONUS: 10,      
         
-        // Penalties
-        DILUTION_PENALTY: -40,  // Private Placements.
-        CLUSTER_PENALTY: -50    // Robot Consensus.
+        // [Event] Penalties
+        DILUTION_PENALTY: -30,
+        CLUSTER_PENALTY: -50,   // Robot consensus
+        SELLING_PRESSURE_PENALTY: -40 // [New] Replaces hardcoded -50 in Analyzer
     },
 
     // --- Thresholds & Constants ---
     THRESHOLDS: {
-        // Analysis Window
-        LOOKBACK_DAYS: 30,          // [New] Only analyze data from last 45 days
+        LOOKBACK_DAYS: 45,          // Extended lookback for better trend analysis
         
-        // Size
+        // Size Filters
         LARGE_SIZE: 50000,          // $50k
-        MEGA_SIZE: 500000,          // $500k
         SIGNIFICANT_IMPACT_RATIO: 0.001, // 0.1% of Market Cap
 
         USD_CAD_RATE: 1.40,         
-        AI_ANALYSIS_TRIGGER_SCORE: 90 
+        AI_ANALYSIS_TRIGGER_SCORE: 75 // [Adjusted] Lower threshold due to Sigmoid normalization
     },
 
-    // --- [New] Anomaly Detection / Sanity Checks ---
+    // --- Anomaly Detection ---
     ANOMALY: {
-        // If Tx Price > 5x Market Price -> Likely Data Error (e.g. DMGI)
         MAX_PRICE_DISCREPANCY: 5.0, 
-        
-        // If Single Tx > 10% of Market Cap -> Likely Error (e.g. SOI)
         MAX_CAP_IMPACT: 0.10,
-
-        // If Price is suspiciously close to Volume (e.g. Price 29906 vs Vol 29906)
-        // This handles the specific data corruption seen in DMGI
         SUSPICIOUS_PRICE_VOL_MATCH_TOLERANCE: 1.0 
     },
 
     // --- Clustering Logic ---
     CLUSTER: {
-        MULTIPLIER: 0.2,        
-        MAX_MULTIPLIER: 2.0,    
+        WINDOW_DAYS: 7,         // [New] Sliding window size
+        MIN_INSIDERS: 2,        // Minimum unique insiders for a cluster
+        MULTIPLIER: 1.2         // 20% Boost for cluster events
     },
 
-    // --- SEDI Transaction Codes ---
+    // --- SEDI Transaction Codes (Unchanged) ---
     CODES: {
-        PUBLIC_BUY: '10',       // "Acquisition in the public market"
+        PUBLIC_BUY: '10',       
         PRIVATE_BUY: ['11', '16'], 
         PLAN_BUY: ['30', '31'], 
         EXERCISE: ['51', '54', '57', '59'], 
         GRANT: ['50', '52', '53','55', '56'], 
-        
-        // Noise codes
         IGNORE: ['90', '97', '99', '00', '35', '37', '38'] 
     }
 };

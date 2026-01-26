@@ -1,7 +1,7 @@
 /**
  * src/services/llm/llm_service.js
- * [Fix] Now injects full article 'content' into the prompt.
- * [Fix] Updated instructions to recognize deep content.
+ * [Audit Fix] Implements Structured JSON Output & Chain of Thought.
+ * Returns a JSON Object instead of a Markdown string.
  */
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
@@ -19,68 +19,86 @@ export class LLMService {
     async analyzeSentiment(context) {
         const { ticker, insiders, totalNetCash, maxScore, marketData, news } = context;
 
+        // 1. Prepare Data Context
         const newsText = news && news.length > 0 
             ? news.map(n => {
-                const body = n.content ? `[CONTENT]: ${n.content}` : `[SUMMARY]: ${n.summary || 'N/A'}`;
+                const body = n.content ? `[CONTENT]: ${n.content.substring(0, 1000)}...` : `[SUMMARY]: ${n.summary || 'N/A'}`;
                 return `### ARTICLE (${n.time})\nTITLE: ${n.title}\n${body}\n`;
             }).join('\n') 
             : "No specific recent news found.";
 
         const insidersText = insiders.map(i => {
             const reasonList = i.reasons || [];
-            const type = reasonList.includes('🔒 Private Placement') ? 'Private Placement' : 'Open Market';
-            return `${i.name} ($${(i.amount/1000).toFixed(1)}k via ${type})`;
+            // Use the weighted score from Analyzer if available, else raw
+            const scoreDisplay = i.score ? `(Score: ${i.score})` : '';
+            return `${i.name}: $${(i.amount/1000).toFixed(1)}k ${scoreDisplay} - [${reasonList.join(', ')}]`;
         }).join('\n- ');
 
         const mktInfo = marketData 
             ? `Price $${marketData.price}, Cap $${(marketData.marketCap/1e6).toFixed(1)}M, Trend: ${marketData.price > marketData.ma50 ? 'Uptrend' : 'Downtrend'}` 
             : "N/A";
 
-        const prompt = `
-You are a strict financial auditor. Analyze this insider activity for ${ticker}.
+        // 2. JSON Schema Definition (The Contract)
+        const systemPrompt = `
+You are a quantitative financial auditor. You must output valid JSON only.
 
-DATA SNAPSHOT:
+Your goal is to analyze insider trading activity for ${ticker}.
+
+INPUT DATA:
 - Market: ${mktInfo}
-- Total Insider Net Buy: $${totalNetCash.toLocaleString()} (Score: ${maxScore})
-- Insider Details:
+- Aggregate Net Flow: $${totalNetCash.toLocaleString()} (Max Score: ${maxScore})
+- Insiders:
 - ${insidersText}
 
 NEWS CONTEXT:
 ${newsText}
 
-INSTRUCTIONS:
-1. **Source Check**: If the news contains "[CONTENT]", you have deep context. If only "[SUMMARY]" or titles are present, start with "⚠️ Analysis based on headlines/snippets only."
-2. **Analysis**: Correlate the insider's buy timing with the news content. Is the news a catalyst?
-3. **Verdict**: Differentiate between "Private Placement" (Dilution risk) vs "Open Market" (Conviction).
+ANALYSIS LOGIC:
+1. **Correlation**: Does the insider buying coincide with a dip (Discount) or news (Catalyst)?
+2. **Quality**: Is this a "Routine Plan" (Ignore) or "Opportunistic Buy" (High Value)?
+3. **Data Quality**: If news is "No specific news" or only headlines, admit low confidence.
 
-OUTPUT FORMAT:
-**⚠️ Data Level: [Deep Read / Headlines Only / No News]**
-
-**🐂 BULL THESIS**
-- Point 1
-- Point 2
-
-**🐻 BEAR RISKS**
-- Point 1
-- Point 2
-
-**⚖️ VERDICT**
-- [BULLISH / NEUTRAL / BEARISH] (One sentence summary)
-`;
+JSON OUTPUT SCHEMA:
+{
+  "hidden_reasoning": "Step-by-step logic before conclusion...",
+  "meta": {
+    "data_quality": "High (Deep Read) | Medium (Headlines) | Low (No News)",
+    "catalyst_identified": boolean
+  },
+  "bull_thesis": ["Point 1", "Point 2 (max 3)"],
+  "bear_risks": ["Risk 1", "Risk 2 (max 3)"],
+  "verdict": {
+    "direction": "BULLISH | NEUTRAL | BEARISH",
+    "confidence_score": 0-100,
+    "one_sentence_summary": "Concise conclusion."
+  }
+}`;
 
         try {
             const response = await this.client.chat.completions.create({
                 model: this.model,
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.3,
-                max_tokens: 8192 
+                messages: [
+                    { role: 'system', content: "You are a JSON-speaking financial analyst." },
+                    { role: 'user', content: systemPrompt }
+                ],
+                temperature: 0.2, // Lower temperature for structured data stability
+                max_tokens: 4096,
+                response_format: { type: "json_object" } // FORCE JSON
             });
 
-            return response.choices[0].message.content;
+            const rawContent = response.choices[0].message.content;
+            
+            // Parse JSON safely
+            try {
+                return JSON.parse(rawContent);
+            } catch (parseError) {
+                console.error("❌ JSON Parse Failed:", rawContent);
+                return null;
+            }
 
         } catch (error) {
             console.error(`🚨 LLM Analysis failed: ${error.message}`);
-            return "AI Analysis Unavailable.";
+            return null;
         }
     }
 }
