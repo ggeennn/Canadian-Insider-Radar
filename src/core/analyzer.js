@@ -68,15 +68,11 @@ export class Analyzer {
     }
 
     static async _analyzeTicker(ticker, records, watchlist) {
+        // 1. [Fix] Move definition to top scope so it's available everywhere
+        const isWatchlisted = watchlist.has(ticker); 
+        
         const insiderGroups = this._groupByInsider(records);
-        const insiderSignals = [];
-        const buyingSignals = []; 
-        const planSignals = []; 
-
-        const firstRecord = records[0];
-        const companyName = firstRecord.raw.issuer_name || firstRecord.raw.issuer || null;
-        const issuerNum = firstRecord.raw.issuer_number || firstRecord.raw.issuer_num;
-        const sediLink = issuerNum ? `https://ceo.ca/content/sedi/issuers/${issuerNum}` : "N/A";
+        const allRawSignals = []; 
 
         // --- Stage 1: Market Data ---
         let marketContext = null;
@@ -85,92 +81,81 @@ export class Analyzer {
             marketContext = await provider.getMarketContext(ticker);
         } catch (e) {}
 
-        // --- Stage 2: Evaluate Insiders ---
+        // --- Stage 2: Evaluate Insiders (Shadow Mode) ---
         for (const insiderName in insiderGroups) {
             const iRecords = insiderGroups[insiderName];
-            const signal = this._evaluateInsider(ticker, insiderName, iRecords, watchlist.has(ticker), marketContext);
-            
-            if (signal) {
-                // 逻辑分支 A: 有效买入 (Score > 0 & Net > 0)
-                if (signal.score > 0 && signal.netCashInvested > 0) {
-                    insiderSignals.push(signal);
-                    
-                    if (signal.netCashInvested > 3000 || signal.score > 15) {
-                        buyingSignals.push(signal);
-                        if (signal.reasons.some(r => r.includes("Auto-Plan"))) {
-                            planSignals.push(signal);
-                        }
-                    }
-                } 
-                // 逻辑分支 B: Watchlist 特权 (显示卖出、低分交易)
-                else if (watchlist.has(ticker)) {
-                    insiderSignals.push(signal);
-                }
-            }
+            // Pass marketContext but NOT isWatchlisted (logic handled externally now)
+            const signal = this._evaluateInsider(ticker, insiderName, iRecords, marketContext);
+            if (signal) allRawSignals.push(signal);
         }
 
-        // --- Stage 3: Consensus Logic ---
-        const totalBuyers = buyingSignals.length;
-        const planBuyers = planSignals.length;
+        // --- Stage 3: Calculate Ticker-Level Sentiment ---
+        // Calculate Global Net Flow (Including hidden sells)
+        const totalNetFlow = allRawSignals.reduce((sum, s) => sum + s.netCashInvested, 0);
         
-        if (totalBuyers > 1) {
-            const isRobotConsensus = (planBuyers / totalBuyers) > 0.5;
-            if (isRobotConsensus) {
-                insiderSignals.forEach(sig => {
-                    if (sig.netCashInvested > 0) {
-                        sig.reasons.push(`🤖 Robot Consensus`);
-                        // 使用配置中的惩罚分
-                        sig.score += (SCORING_CONFIG.SCORES.CLUSTER_PENALTY || -50); 
-                    }
-                });
-            } else {
-                const multiplier = 1 + Math.min((totalBuyers - 1) * SCORING_CONFIG.CLUSTER.MULTIPLIER, SCORING_CONFIG.CLUSTER.MAX_MULTIPLIER);
-                insiderSignals.forEach(sig => {
-                    if (sig.netCashInvested > 0) {
-                        sig.score = Math.round(sig.score * multiplier);
-                        sig.reasons.push(`👥 Consensus (${totalBuyers})`);
-                    }
-                });
+        // --- Stage 4: Process Signals ---
+        const finalSignals = [];
+        
+        for (const sig of allRawSignals) {
+            sig.isWatchlisted = isWatchlisted; // Assign the flag
+
+            // 4.1 Apply Context Penalty (Smart Scoring)
+            // If heavy selling pressure exists, penalize buy signals
+            if (totalNetFlow < -30000 && sig.netCashInvested > 0) {
+                sig.score -= 50; 
+                sig.reasons.push(`📉 Heavy Selling Pressure (Net: $${(totalNetFlow/1000).toFixed(0)}k)`);
             }
+
+            // 4.2 Visibility Filter
+            let isVisible = false;
+            
+            // Case A: Valid Buy (Thresholds)
+            if (sig.score > 0 && sig.netCashInvested > 0) {
+                 if (sig.netCashInvested > 1500 || sig.score > 15) isVisible = true;
+            }
+            
+            // Case B: Watchlist (Always Show)
+            if (isWatchlisted) isVisible = true;
+
+            // 4.3 Add to Final Output
+            if (isVisible) finalSignals.push(sig);
         }
 
-        // --- Stage 4: AI Analysis ---
-        const activeSignals = insiderSignals.filter(s => s.score >= 20 && s.netCashInvested > 0);
+        // --- Stage 5: AI Logic ---
+        // [Fix] Removed unused 'buyingSignals'
+        const activeSignals = finalSignals.filter(s => s.score >= 20 && s.netCashInvested > 0);
         
         if (activeSignals.length > 0) {
             const maxScoreSignal = activeSignals.reduce((prev, cur) => (prev.score > cur.score) ? prev : cur);
             
-            if (watchlist.has(ticker) || maxScoreSignal.score >= SCORING_CONFIG.THRESHOLDS.AI_ANALYSIS_TRIGGER_SCORE) {
-                
-                const news = await newsService.getRecentNews(ticker, companyName);
-                const totalNetCash = buyingSignals.reduce((sum, s) => sum + s.netCashInvested, 0);
-                
-                const aiAnalysis = await llmService.analyzeSentiment({
+            // [Fix] Now 'isWatchlisted' is correctly accessed from the top scope
+            if (isWatchlisted || maxScoreSignal.score >= SCORING_CONFIG.THRESHOLDS.AI_ANALYSIS_TRIGGER_SCORE) {
+                 
+                 const news = await newsService.getRecentNews(ticker, null);
+                 
+                 const aiAnalysis = await llmService.analyzeSentiment({
                     ticker,
-                    insiders: activeSignals.map(s => ({
-                        name: s.insider,
-                        amount: s.netCashInvested,
-                        reasons: s.reasons,
-                        relation: s.relation
-                    })),
-                    totalNetCash,
+                    insiders: activeSignals.map(s => ({ ...s, name: s.insider, amount: s.netCashInvested })),
+                    totalNetCash: totalNetFlow, // Correctly passes the global flow
                     maxScore: maxScoreSignal.score,
                     marketData: marketContext,
                     news: news 
                 });
 
-                activeSignals.forEach(sig => {
-                    sig.aiAnalysis = aiAnalysis;
-                    sig.aiNews = news;
-                    sig.sediLink = sediLink; 
+                activeSignals.forEach(sig => { 
+                    sig.aiAnalysis = aiAnalysis; 
+                    sig.aiNews = news; 
+                    // Safe guard for issuer_number access
+                    const issuerNum = records[0].raw.issuer_number || records[0].raw.issuer_num;
+                    sig.sediLink = issuerNum ? `https://ceo.ca/content/sedi/issuers/${issuerNum}` : null;
                 });
             }
         }
 
-        return activeSignals;
+        return finalSignals;
     }
 
-    static _evaluateInsider(ticker, insiderName, recordList, isWatchlisted, marketContext) {
+    static _evaluateInsider(ticker, insiderName, recordList, marketContext) {
         const CFG = SCORING_CONFIG;
         const ANOMALY = CFG.ANOMALY; // [Restored] 恢复异常检测配置
         const meta = recordList[0].raw;
@@ -249,10 +234,6 @@ export class Analyzer {
         }
 
         const netCash = buyCost - sellProceeds;
-        
-        // Filter logic
-        if (netCash < 0 && !isWatchlisted) return null;
-        if (netCash < 5000 && netCash >= 0 && !isWatchlisted) return null;
 
         let score = 0;
         const reasons = [];
@@ -340,7 +321,7 @@ export class Analyzer {
             score, 
             netCashInvested: netCash, 
             reasons, 
-            isWatchlisted, 
+            //isWatchlisted, 
             sediUrl: null, 
             marketContext,
             txDetailStr,
